@@ -1,36 +1,23 @@
 <?php
+    // script para crear una conexión con la BD
 
-class Conexion {
+    require_once 'constantes.php';
 
-    private $host = "sql302.infinityfree.com";
-    private $database = "if0_42519781_safemind_bd";
-    private $user = "if0_42519781";
-    private $password = "TU_CONTRASEÑA";
+    function conectar()
+    {
+        $conexion = mysqli_connect(HOST, USER, PW, BD);
 
-    public function conectar() {
+        if(!$conexion)
+          {
+        die("Error: ".mysqli_connect_error());
+          }
 
-        $conexion = new mysqli(
-            $this->host,
-            $this->user,
-            $this->password,
-            $this->database
-        );
-
-        if ($conexion->connect_error) {
-
-            http_response_code(500);
-
-            die(json_encode([
-                "success" => false,
-                "message" => "Error de conexión a la base de datos."
-            ]));
-
-        }
-
-        $conexion->set_charset("utf8mb4");
+        mysqli_set_charset($conexion,"utf8mb4");
 
         return $conexion;
-
     }
 
-}
+    //Probar conexion a BD
+    //echo '<br>Probando conexión a la BD ...';
+    //$con = conectar(); 
+?>
