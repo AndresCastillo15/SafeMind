@@ -1,14 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 4.9.0.1
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Servidor: sql302.byetcluster.com
--- Tiempo de generación: 04-08-2026 a las 07:46:39
--- Versión del servidor: 11.4.12-MariaDB
--- Versión de PHP: 7.2.22
+-- Servidor: localhost
+-- Tiempo de generación: 31-08-2026 a las 21:40:10
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -70,7 +69,6 @@ CREATE TABLE `analisis_recurso` (
 
 CREATE TABLE `estudiante` (
   `id_estudiante` int(11) NOT NULL,
-  `codigo_estudiante` varchar(20) NOT NULL,
   `nombre` varchar(100) NOT NULL,
   `apellido` varchar(100) NOT NULL,
   `correo` varchar(150) NOT NULL,
@@ -80,6 +78,14 @@ CREATE TABLE `estudiante` (
   `estado` varchar(20) NOT NULL DEFAULT 'Activo',
   `ultimo_registro` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Volcado de datos para la tabla `estudiante`
+--
+
+INSERT INTO `estudiante` (`id_estudiante`, `nombre`, `apellido`, `correo`, `telefono`, `curso`, `chat_id_telegram`, `estado`, `ultimo_registro`) VALUES
+(1, 'Nicolas', 'Cabrera', 'odnljdkyi@gmail.com', '666', '11-1', 123456789, 'Activo', '2026-08-04 09:19:01'),
+(2, 'Jeremias', 'Potro', '1234@gmail.com', NULL, NULL, 7402841157, 'Activo', '2026-08-11 16:58:13');
 
 -- --------------------------------------------------------
 
@@ -164,6 +170,24 @@ CREATE TABLE `recurso_apoyo` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `registro_temporal`
+--
+
+CREATE TABLE `registro_temporal` (
+  `chat_id_telegram` bigint(20) NOT NULL,
+  `paso` varchar(20) NOT NULL,
+  `nombre` varchar(100) DEFAULT NULL,
+  `apellido` varchar(100) DEFAULT NULL,
+  `correo` varchar(150) DEFAULT NULL,
+  `telefono` varchar(30) DEFAULT NULL,
+  `curso` varchar(100) DEFAULT NULL,
+  `creado_en` datetime DEFAULT current_timestamp(),
+  `actualizado_en` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `seguimiento`
 --
 
@@ -207,7 +231,6 @@ ALTER TABLE `analisis_recurso`
 --
 ALTER TABLE `estudiante`
   ADD PRIMARY KEY (`id_estudiante`),
-  ADD UNIQUE KEY `codigo_estudiante` (`codigo_estudiante`),
   ADD UNIQUE KEY `correo` (`correo`),
   ADD UNIQUE KEY `chat_id_telegram` (`chat_id_telegram`);
 
@@ -245,6 +268,12 @@ ALTER TABLE `recurso_apoyo`
   ADD PRIMARY KEY (`id_recurso`);
 
 --
+-- Indices de la tabla `registro_temporal`
+--
+ALTER TABLE `registro_temporal`
+  ADD PRIMARY KEY (`chat_id_telegram`);
+
+--
 -- Indices de la tabla `seguimiento`
 --
 ALTER TABLE `seguimiento`
@@ -272,7 +301,7 @@ ALTER TABLE `analisis_ia`
 -- AUTO_INCREMENT de la tabla `estudiante`
 --
 ALTER TABLE `estudiante`
-  MODIFY `id_estudiante` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_estudiante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `evaluacion`
