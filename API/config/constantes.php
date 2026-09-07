@@ -7,10 +7,10 @@
     define('HOST', 'localhost');
     define('BD', 'Safemind');
 
-    // Parametros DB remota - (infinityfree)
-    /*define('USER', 'if0_41712639'); 
-    define('PW', 'kX3CL0T0NA6cqwj');
-    define('HOST', 'sql213.infinityfree.com');
-    define('BD', 'if0_41712639_centro_medico');*/
+    // Parametros DB remota 
+    /*define('USER', 'colegdfs_safemind'); 
+    define('PW', 'Safemind2026');
+    define('HOST', 'localhost');
+    define('BD', 'colegdfs_safemind');*/
     
 ?>
