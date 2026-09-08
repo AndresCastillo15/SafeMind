@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 4.7.1
 -- https://www.phpmyadmin.net/
 --
--- Servidor: localhost
--- Tiempo de generación: 31-08-2026 a las 21:40:10
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Servidor: 162.210.70.175
+-- Tiempo de generación: 08-09-2026 a las 11:18:43
+-- Versión del servidor: 5.7.23-23
+-- Versión de PHP: 7.0.33-0ubuntu0.16.04.16
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -31,8 +32,8 @@ CREATE TABLE `alerta` (
   `id_alerta` int(11) NOT NULL,
   `id_analisis` int(11) NOT NULL,
   `estado` varchar(30) DEFAULT NULL,
-  `fecha` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+  `fecha` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -46,9 +47,9 @@ CREATE TABLE `analisis_ia` (
   `id_nivel` tinyint(4) NOT NULL,
   `emocion_detectada` varchar(100) DEFAULT NULL,
   `porcentaje_confianza` decimal(5,2) DEFAULT NULL,
-  `resumen` text DEFAULT NULL,
-  `fecha` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+  `resumen` text,
+  `fecha` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -59,7 +60,7 @@ CREATE TABLE `analisis_ia` (
 CREATE TABLE `analisis_recurso` (
   `id_analisis` int(11) NOT NULL,
   `id_recurso` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -76,16 +77,15 @@ CREATE TABLE `estudiante` (
   `curso` varchar(30) DEFAULT NULL,
   `chat_id_telegram` bigint(20) DEFAULT NULL,
   `estado` varchar(20) NOT NULL DEFAULT 'Activo',
-  `ultimo_registro` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+  `ultimo_registro` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Volcado de datos para la tabla `estudiante`
 --
 
 INSERT INTO `estudiante` (`id_estudiante`, `nombre`, `apellido`, `correo`, `telefono`, `curso`, `chat_id_telegram`, `estado`, `ultimo_registro`) VALUES
-(1, 'Nicolas', 'Cabrera', 'odnljdkyi@gmail.com', '666', '11-1', 123456789, 'Activo', '2026-08-04 09:19:01'),
-(2, 'Jeremias', 'Potro', '1234@gmail.com', NULL, NULL, 7402841157, 'Activo', '2026-08-11 16:58:13');
+(5, 'Nicolás', 'Cabrera', 'Hdjdjd', '173747', '11', 8860427697, 'activo', '2026-09-08 16:32:11');
 
 -- --------------------------------------------------------
 
@@ -96,10 +96,11 @@ INSERT INTO `estudiante` (`id_estudiante`, `nombre`, `apellido`, `correo`, `tele
 CREATE TABLE `evaluacion` (
   `id_evaluacion` int(11) NOT NULL,
   `id_estudiante` int(11) NOT NULL,
-  `fecha_inicio` datetime DEFAULT current_timestamp(),
+  `estado_animo` varchar(30) DEFAULT NULL,
+  `fecha_inicio` datetime DEFAULT CURRENT_TIMESTAMP,
   `fecha_fin` datetime DEFAULT NULL,
   `estado` varchar(20) DEFAULT 'Activa'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -112,8 +113,8 @@ CREATE TABLE `mensaje` (
   `id_evaluacion` int(11) NOT NULL,
   `remitente` enum('estudiante','ia') NOT NULL,
   `contenido` text NOT NULL,
-  `fecha_hora` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+  `fecha_hora` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -126,7 +127,7 @@ CREATE TABLE `nivel_riesgo` (
   `nombre` varchar(20) DEFAULT NULL,
   `descripcion` varchar(255) DEFAULT NULL,
   `color` varchar(20) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Volcado de datos para la tabla `nivel_riesgo`
@@ -151,7 +152,7 @@ CREATE TABLE `psicologo` (
   `correo` varchar(150) DEFAULT NULL,
   `telefono` varchar(20) DEFAULT NULL,
   `estado` varchar(20) DEFAULT 'Activo'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -162,10 +163,20 @@ CREATE TABLE `psicologo` (
 CREATE TABLE `recurso_apoyo` (
   `id_recurso` int(11) NOT NULL,
   `titulo` varchar(150) DEFAULT NULL,
-  `descripcion` text DEFAULT NULL,
+  `descripcion` text,
   `tipo` varchar(50) DEFAULT NULL,
   `url` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `registro_emocional`
+--
+
+CREATE TABLE `registro_emocional` (
+  `asdas` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -181,9 +192,16 @@ CREATE TABLE `registro_temporal` (
   `correo` varchar(150) DEFAULT NULL,
   `telefono` varchar(30) DEFAULT NULL,
   `curso` varchar(100) DEFAULT NULL,
-  `creado_en` datetime DEFAULT current_timestamp(),
-  `actualizado_en` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `creado_en` datetime DEFAULT CURRENT_TIMESTAMP,
+  `actualizado_en` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Volcado de datos para la tabla `registro_temporal`
+--
+
+INSERT INTO `registro_temporal` (`chat_id_telegram`, `paso`, `nombre`, `apellido`, `correo`, `telefono`, `curso`, `creado_en`, `actualizado_en`) VALUES
+(8860427697, 'completado', 'Nicolás', '/inicio', '/inicio', '/inicio', '/inicio', '2026-09-08 16:32:24', '2026-09-08 16:44:37');
 
 -- --------------------------------------------------------
 
@@ -195,10 +213,10 @@ CREATE TABLE `seguimiento` (
   `id_seguimiento` int(11) NOT NULL,
   `id_alerta` int(11) NOT NULL,
   `id_psicologo` int(11) NOT NULL,
-  `fecha` datetime DEFAULT current_timestamp(),
-  `observacion` text DEFAULT NULL,
+  `fecha` datetime DEFAULT CURRENT_TIMESTAMP,
+  `observacion` text,
   `estado` varchar(30) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Índices para tablas volcadas
@@ -290,49 +308,41 @@ ALTER TABLE `seguimiento`
 --
 ALTER TABLE `alerta`
   MODIFY `id_alerta` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- AUTO_INCREMENT de la tabla `analisis_ia`
 --
 ALTER TABLE `analisis_ia`
   MODIFY `id_analisis` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- AUTO_INCREMENT de la tabla `estudiante`
 --
 ALTER TABLE `estudiante`
-  MODIFY `id_estudiante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
+  MODIFY `id_estudiante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 --
 -- AUTO_INCREMENT de la tabla `evaluacion`
 --
 ALTER TABLE `evaluacion`
   MODIFY `id_evaluacion` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- AUTO_INCREMENT de la tabla `mensaje`
 --
 ALTER TABLE `mensaje`
   MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- AUTO_INCREMENT de la tabla `psicologo`
 --
 ALTER TABLE `psicologo`
   MODIFY `id_psicologo` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- AUTO_INCREMENT de la tabla `recurso_apoyo`
 --
 ALTER TABLE `recurso_apoyo`
   MODIFY `id_recurso` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- AUTO_INCREMENT de la tabla `seguimiento`
 --
 ALTER TABLE `seguimiento`
   MODIFY `id_seguimiento` int(11) NOT NULL AUTO_INCREMENT;
-
 --
 -- Restricciones para tablas volcadas
 --

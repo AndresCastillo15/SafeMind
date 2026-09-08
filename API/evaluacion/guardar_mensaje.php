@@ -8,31 +8,37 @@ $conexion = conectar();
 
 /*
 |--------------------------------------------------------------------------
-| 1. Verificar chat_id
+| VERIFICAR PARÁMETROS
 |--------------------------------------------------------------------------
 */
 
-if (!isset($_POST['chat_id']) || trim($_POST['chat_id']) === '') {
+if (
+    !isset($_POST['chat_id']) ||
+    empty($_POST['chat_id']) ||
+    !isset($_POST['contenido']) ||
+    empty(trim($_POST['contenido']))
+) {
 
     echo json_encode([
         'success' => false,
-        'mensaje' => 'No se recibió el chat_id'
+        'mensaje' => 'Faltan parámetros: chat_id y contenido'
     ]);
 
     exit;
 }
 
 $chat_id = trim($_POST['chat_id']);
+$contenido = trim($_POST['contenido']);
 
 
 /*
 |--------------------------------------------------------------------------
-| 2. Buscar estudiante
+| BUSCAR ESTUDIANTE
 |--------------------------------------------------------------------------
 */
 
 $sql = "
-    SELECT id_estudiante, nombre, apellido
+    SELECT id_estudiante
     FROM estudiante
     WHERE chat_id_telegram = ?
     AND estado = 'Activo'
@@ -48,7 +54,6 @@ if (!$stmt) {
         'mensaje' => 'Error al preparar la consulta del estudiante'
     ]);
 
-    mysqli_close($conexion);
     exit;
 }
 
@@ -57,18 +62,11 @@ mysqli_stmt_execute($stmt);
 
 $resultado = mysqli_stmt_get_result($stmt);
 
-
-/*
-|--------------------------------------------------------------------------
-| 3. Verificar que el estudiante exista
-|--------------------------------------------------------------------------
-*/
-
 if (mysqli_num_rows($resultado) === 0) {
 
     echo json_encode([
         'success' => false,
-        'mensaje' => 'No se encontró un estudiante registrado con este chat_id'
+        'mensaje' => 'No existe un estudiante registrado con este chat_id'
     ]);
 
     mysqli_stmt_close($stmt);
@@ -78,26 +76,25 @@ if (mysqli_num_rows($resultado) === 0) {
 }
 
 $estudiante = mysqli_fetch_assoc($resultado);
-
 $id_estudiante = $estudiante['id_estudiante'];
-$nombre = $estudiante['nombre'];
-$apellido = $estudiante['apellido'];
 
 mysqli_stmt_close($stmt);
 
 
 /*
 |--------------------------------------------------------------------------
-| 4. Crear nueva evaluación
+| BUSCAR EVALUACIÓN ACTIVA
 |--------------------------------------------------------------------------
 */
 
 $sql = "
-    INSERT INTO evaluacion (
-        id_estudiante,
-        estado
-    )
-    VALUES (?, 'Activa')
+    SELECT id_evaluacion
+    FROM evaluacion
+    WHERE id_estudiante = ?
+    AND estado = 'Activa'
+    AND estado_animo IS NOT NULL
+    ORDER BY id_evaluacion DESC
+    LIMIT 1
 ";
 
 $stmt = mysqli_prepare($conexion, $sql);
@@ -106,43 +103,108 @@ if (!$stmt) {
 
     echo json_encode([
         'success' => false,
-        'mensaje' => 'Error al preparar la evaluación'
+        'mensaje' => 'Error al preparar la consulta de evaluación'
     ]);
 
     mysqli_close($conexion);
+
     exit;
 }
 
 mysqli_stmt_bind_param($stmt, "i", $id_estudiante);
+mysqli_stmt_execute($stmt);
+
+$resultado = mysqli_stmt_get_result($stmt);
+
+if (mysqli_num_rows($resultado) === 0) {
+
+    echo json_encode([
+        'success' => false,
+        'mensaje' => 'No existe una evaluación activa con estado de ánimo registrado'
+    ]);
+
+    mysqli_stmt_close($stmt);
+    mysqli_close($conexion);
+
+    exit;
+}
+
+$evaluacion = mysqli_fetch_assoc($resultado);
+$id_evaluacion = $evaluacion['id_evaluacion'];
+
+mysqli_stmt_close($stmt);
 
 
 /*
 |--------------------------------------------------------------------------
-| 5. Guardar evaluación
+| GUARDAR MENSAJE
+|--------------------------------------------------------------------------
+*/
+
+$sql = "
+    INSERT INTO mensaje (
+        id_evaluacion,
+        remitente,
+        contenido
+    )
+    VALUES (?, 'estudiante', ?)
+";
+
+$stmt = mysqli_prepare($conexion, $sql);
+
+if (!$stmt) {
+
+    echo json_encode([
+        'success' => false,
+        'mensaje' => 'Error al preparar el mensaje'
+    ]);
+
+    mysqli_close($conexion);
+
+    exit;
+}
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "is",
+    $id_evaluacion,
+    $contenido
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| EJECUTAR
 |--------------------------------------------------------------------------
 */
 
 if (mysqli_stmt_execute($stmt)) {
 
-    $id_evaluacion = mysqli_insert_id($conexion);
+    $id_mensaje = mysqli_insert_id($conexion);
 
     echo json_encode([
         'success' => true,
-        'mensaje' => 'Evaluación creada correctamente',
+        'mensaje' => 'Mensaje guardado correctamente',
+        'id_mensaje' => $id_mensaje,
         'id_evaluacion' => $id_evaluacion,
         'id_estudiante' => $id_estudiante,
-        'nombre' => $nombre,
-        'apellido' => $apellido
+        'contenido' => $contenido
     ]);
 
 } else {
 
     echo json_encode([
         'success' => false,
-        'mensaje' => 'No se pudo crear la evaluación',
-        'error' => mysqli_stmt_error($stmt)
+        'mensaje' => 'No se pudo guardar el mensaje'
     ]);
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| CERRAR
+|--------------------------------------------------------------------------
+*/
 
 mysqli_stmt_close($stmt);
 mysqli_close($conexion);
