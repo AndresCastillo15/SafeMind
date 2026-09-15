@@ -440,6 +440,7 @@
                 src="img/logo.png"
                 class="logo"
                 alt="Logo SafeMind"
+                style="width: 100px; height: auto;"
             >
 
             <h1 class="titulo">SafeMind</h1>
