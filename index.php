@@ -73,7 +73,7 @@
 
             display: grid;
 
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
 
             gap: 15px;
         }
@@ -107,7 +107,7 @@
         }
 
         .icono {
-            font-size: 32px;
+            font-size: 28px;
 
             margin-bottom: 8px;
         }
@@ -124,10 +124,6 @@
 
         .estudiante {
             background: #e7a91b;
-        }
-
-        .padres {
-            background: #b5222d;
         }
 
         /* REGISTRO */
@@ -235,6 +231,14 @@
 
         }
 
+        @media (max-width: 480px) {
+
+            .botones {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
     </style>
 
 </head>
@@ -328,34 +332,7 @@
             </a>
 
 
-            <!-- PADRES -->
-
-            <a
-                href="login.php?rol=padres"
-                class="boton padres"
-            >
-
-                <span class="icono">
-                    ♙
-                </span>
-
-                PADRES
-
-            </a>
-
-
         </div>
-
-
-        <!-- REGISTRO DE ESTUDIANTE -->
-
-        <div class="registro">
-
-            ¿Eres estudiante y no tienes cuenta?
-
-            <a href="registro.php">
-                Regístrate aquí
-            </a>
 
         </div>
 

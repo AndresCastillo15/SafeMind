@@ -12,84 +12,115 @@ $roles = [
     'admin' => 'Administrador',
     'profesor' => 'Profesor',
     'estudiante' => 'Estudiante',
-    'padres' => 'Padres de familia',
-    'psicologo' => 'Psicólogo'
 ];
 
 if (!isset($roles[$rol])) {
     $rol = 'estudiante';
 }
 
+/*
+--------------------------------------------------------------------
+Mapa de roles habilitados para iniciar sesión con correo/contraseña.
+
+Solo 'profesor' tiene tabla real con columna password por ahora
+(usa la tabla `profesor`, ver Safemind.sql). Los demás roles no
+tienen tabla de autenticación todavía, así que en vez de lanzar un
+error 500 al intentar consultarlos, se les muestra un mensaje claro.
+
+Cuando agregues las tablas que faltan (admin, un login propio de
+estudiante), solo hay que añadir su entrada aquí con:
+    'rol_login' => [
+        'tabla'          => 'nombre_tabla',
+        'campo_id'       => 'columna_id',
+        'redirigir_a'    => 'ruta/a/su/dashboard.php',
+    ]
+--------------------------------------------------------------------
+*/
+
+$tablas_login = [
+    'profesor' => [
+        'tabla'       => 'profesor',
+        'campo_id'    => 'id_profesor',
+        'redirigir_a' => 'dashboards/profesor/index.php',
+    ],
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $correo = trim($_POST['correo']);
-    $password = $_POST['password'];
+    if (!isset($tablas_login[$rol])) {
 
-    $conexion = conectar();
-
-    $sql = "SELECT * FROM usuarios 
-            WHERE correo = ? 
-            AND rol = ?
-            AND estado = 1";
-
-    $stmt = mysqli_prepare($conexion, $sql);
-
-    mysqli_stmt_bind_param($stmt, "ss", $correo, $rol);
-
-    mysqli_stmt_execute($stmt);
-
-    $resultado = mysqli_stmt_get_result($stmt);
-
-    if (mysqli_num_rows($resultado) === 1) {
-
-        $usuario = mysqli_fetch_assoc($resultado);
-
-        if (password_verify($password, $usuario['password'])) {
-
-            $_SESSION['id_usuario'] = $usuario['id_usuario'];
-            $_SESSION['nombre'] = $usuario['nombre'];
-            $_SESSION['correo'] = $usuario['correo'];
-            $_SESSION['rol'] = $usuario['rol'];
-
-            if ($usuario['rol'] === 'estudiante') {
-                header("Location: estudiante/index.php");
-                exit();
-            }
-
-            if ($usuario['rol'] === 'profesor') {
-                header("Location: profesor/index.php");
-                exit();
-            }
-
-            if ($usuario['rol'] === 'admin') {
-                header("Location: admin/index.php");
-                exit();
-            }
-
-            if ($usuario['rol'] === 'padres') {
-                header("Location: padres/index.php");
-                exit();
-            }
-
-            if ($usuario['rol'] === 'psicologo') {
-                header("Location: psicologo/index.php");
-                exit();
-            }
-
-        } else {
-
-            $mensaje = "Contraseña incorrecta.";
-
-        }
+        $mensaje = "El inicio de sesión para este rol todavía no está disponible.";
 
     } else {
 
-        $mensaje = "El usuario no existe o no pertenece a este rol.";
+        $correo = trim($_POST['correo'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if ($correo === '' || $password === '') {
+
+            $mensaje = "Completa correo y contraseña.";
+
+        } else {
+
+            $config = $tablas_login[$rol];
+            $conexion = conectar();
+
+            $sql = "SELECT * FROM `{$config['tabla']}`
+                    WHERE correo = ?
+                    AND estado = 'Activo'";
+
+            $stmt = mysqli_prepare($conexion, $sql);
+
+            if (!$stmt) {
+
+                $mensaje = "Error interno al iniciar sesión. Intenta más tarde.";
+
+            } else {
+
+                mysqli_stmt_bind_param($stmt, "s", $correo);
+                mysqli_stmt_execute($stmt);
+
+                $resultado = mysqli_stmt_get_result($stmt);
+
+                if (mysqli_num_rows($resultado) === 1) {
+
+                    $usuario = mysqli_fetch_assoc($resultado);
+
+                    if (!empty($usuario['password']) && password_verify($password, $usuario['password'])) {
+
+                        $_SESSION['id_usuario'] = $usuario[$config['campo_id']];
+                        $_SESSION['nombre'] = $usuario['nombre'];
+                        $_SESSION['correo'] = $usuario['correo'];
+                        $_SESSION['rol'] = $rol;
+
+                        mysqli_stmt_close($stmt);
+                        mysqli_close($conexion);
+
+                        header("Location: " . $config['redirigir_a']);
+                        exit();
+
+                    } else {
+
+                        $mensaje = "Contraseña incorrecta.";
+
+                    }
+
+                } else {
+
+                    $mensaje = "El usuario no existe, no está activo, o no pertenece a este rol.";
+
+                }
+
+                mysqli_stmt_close($stmt);
+
+            }
+
+            mysqli_close($conexion);
+
+        }
 
     }
 
-    mysqli_stmt_close($stmt);
-    mysqli_close($conexion);
 }
 
 ?>
