@@ -9,7 +9,7 @@ $conexion = conectar();
 
 /*
 |--------------------------------------------------------------------------
-| VERIFICAR CHAT_ID
+| VALIDAR CHAT_ID
 |--------------------------------------------------------------------------
 */
 
@@ -18,8 +18,9 @@ if (!isset($_POST['chat_id']) || empty($_POST['chat_id'])) {
     echo json_encode([
         'success' => false,
         'mensaje' => 'No se recibió el chat_id'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 
+    mysqli_close($conexion);
     exit;
 }
 
@@ -28,7 +29,7 @@ $chat_id = trim($_POST['chat_id']);
 
 /*
 |--------------------------------------------------------------------------
-| 1. BUSCAR EN REGISTRO TEMPORAL
+| 1. BUSCAR REGISTRO TEMPORAL
 |--------------------------------------------------------------------------
 */
 
@@ -52,8 +53,8 @@ if (!$stmt) {
 
     echo json_encode([
         'success' => false,
-        'mensaje' => 'Error al preparar la consulta del registro temporal'
-    ]);
+        'mensaje' => 'Error al preparar consulta de registro temporal'
+    ], JSON_UNESCAPED_UNICODE);
 
     mysqli_close($conexion);
     exit;
@@ -84,6 +85,8 @@ if (mysqli_num_rows($resultado) > 0) {
         'existe_registro' => true,
         'registrado' => false,
         'evaluacion_pendiente' => false,
+        'estado_conversacion' => null,
+        'id_evaluacion' => null,
         'paso' => $registro['paso'],
         'datos' => [
             'nombre' => $registro['nombre'],
@@ -92,7 +95,7 @@ if (mysqli_num_rows($resultado) > 0) {
             'telefono' => $registro['telefono'],
             'curso' => $registro['curso']
         ]
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
@@ -117,7 +120,7 @@ $sql = "
         estado
     FROM estudiante
     WHERE chat_id_telegram = ?
-    AND estado = 'Activo'
+      AND estado = 'Activo'
     LIMIT 1
 ";
 
@@ -127,8 +130,8 @@ if (!$stmt) {
 
     echo json_encode([
         'success' => false,
-        'mensaje' => 'Error al preparar la consulta del estudiante'
-    ]);
+        'mensaje' => 'Error al preparar consulta del estudiante'
+    ], JSON_UNESCAPED_UNICODE);
 
     mysqli_close($conexion);
     exit;
@@ -142,129 +145,108 @@ $resultado = mysqli_stmt_get_result($stmt);
 
 /*
 |--------------------------------------------------------------------------
-| SI EL ESTUDIANTE EXISTE
+| SI NO EXISTE EL ESTUDIANTE
 |--------------------------------------------------------------------------
 */
 
-if (mysqli_num_rows($resultado) > 0) {
-
-    $estudiante = mysqli_fetch_assoc($resultado);
+if (mysqli_num_rows($resultado) === 0) {
 
     mysqli_stmt_close($stmt);
-
-    $id_estudiante = $estudiante['id_estudiante'];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | 3. BUSCAR EVALUACIÓN ACTIVA PENDIENTE DE DESCRIPCIÓN
-    |--------------------------------------------------------------------------
-    |
-    | La evaluación debe:
-    | - pertenecer al estudiante
-    | - estar activa
-    | - tener estado_animo
-    | - todavía no tener mensaje del estudiante
-    |
-    */
-
-    $sql = "
-        SELECT
-            e.id_evaluacion,
-            e.estado_animo,
-            e.fecha_inicio
-        FROM evaluacion e
-        LEFT JOIN mensaje m
-            ON m.id_evaluacion = e.id_evaluacion
-            AND m.remitente = 'estudiante'
-        WHERE e.id_estudiante = ?
-        AND e.estado = 'Activa'
-        AND e.estado_animo IS NOT NULL
-        AND m.id_mensaje IS NULL
-        ORDER BY e.id_evaluacion DESC
-        LIMIT 1
-    ";
-
-    $stmt = mysqli_prepare($conexion, $sql);
-
-    if (!$stmt) {
-
-        echo json_encode([
-            'success' => false,
-            'mensaje' => 'Error al buscar la evaluación pendiente'
-        ]);
-
-        mysqli_close($conexion);
-        exit;
-    }
-
-    mysqli_stmt_bind_param(
-        $stmt,
-        "i",
-        $id_estudiante
-    );
-
-    mysqli_stmt_execute($stmt);
-
-    $resultado_evaluacion = mysqli_stmt_get_result($stmt);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | EXISTE EVALUACIÓN PENDIENTE DE DESCRIPCIÓN
-    |--------------------------------------------------------------------------
-    */
-
-    if (mysqli_num_rows($resultado_evaluacion) > 0) {
-
-        $evaluacion = mysqli_fetch_assoc(
-            $resultado_evaluacion
-        );
-
-        mysqli_stmt_close($stmt);
-        mysqli_close($conexion);
-
-        echo json_encode([
-            'success' => true,
-            'tipo_usuario' => 'estudiante',
-            'existe_registro' => true,
-            'registrado' => true,
-            'evaluacion_pendiente' => true,
-            'id_estudiante' => $id_estudiante,
-            'id_evaluacion' => $evaluacion['id_evaluacion'],
-            'estado_animo' => $evaluacion['estado_animo'],
-            'paso' => 'pendiente_descripcion',
-            'datos' => [
-                'nombre' => $estudiante['nombre'],
-                'apellido' => $estudiante['apellido'],
-                'correo' => $estudiante['correo'],
-                'telefono' => $estudiante['telefono'],
-                'curso' => $estudiante['curso']
-            ]
-        ]);
-
-        exit;
-    }
-
-    mysqli_stmt_close($stmt);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | 4. ESTUDIANTE REGISTRADO SIN DESCRIPCIÓN PENDIENTE
-    |--------------------------------------------------------------------------
-    */
-
     mysqli_close($conexion);
 
     echo json_encode([
         'success' => true,
-        'tipo_usuario' => 'estudiante',
+        'tipo_usuario' => 'nuevo',
+        'existe_registro' => false,
+        'registrado' => false,
+        'evaluacion_pendiente' => false,
+        'estado_conversacion' => null,
+        'id_evaluacion' => null,
+        'paso' => null,
+        'mensaje' => 'No existe un registro para este chat_id'
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$estudiante = mysqli_fetch_assoc($resultado);
+
+mysqli_stmt_close($stmt);
+
+$id_estudiante = intval($estudiante['id_estudiante']);
+
+
+/*
+|--------------------------------------------------------------------------
+| 3. BUSCAR EVALUACIÓN ACTIVA EN CONVERSACIÓN
+|--------------------------------------------------------------------------
+|
+| Este caso tiene prioridad.
+|
+*/
+
+$sql = "
+    SELECT
+        id_evaluacion,
+        estado_animo,
+        estado_conversacion,
+        fecha_inicio
+    FROM evaluacion
+    WHERE id_estudiante = ?
+      AND estado = 'Activa'
+      AND estado_conversacion = 'en_conversacion'
+    ORDER BY id_evaluacion DESC
+    LIMIT 1
+";
+
+$stmt = mysqli_prepare($conexion, $sql);
+
+if (!$stmt) {
+
+    echo json_encode([
+        'success' => false,
+        'mensaje' => 'Error al buscar conversación activa'
+    ], JSON_UNESCAPED_UNICODE);
+
+    mysqli_close($conexion);
+    exit;
+}
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $id_estudiante
+);
+
+mysqli_stmt_execute($stmt);
+
+$resultado_conversacion = mysqli_stmt_get_result($stmt);
+
+
+/*
+|--------------------------------------------------------------------------
+| EXISTE CONVERSACIÓN ACTIVA
+|--------------------------------------------------------------------------
+*/
+
+if (mysqli_num_rows($resultado_conversacion) > 0) {
+
+    $evaluacion = mysqli_fetch_assoc($resultado_conversacion);
+
+    mysqli_stmt_close($stmt);
+    mysqli_close($conexion);
+
+    echo json_encode([
+        'success' => true,
+        'tipo_usuario' => 'estudiante_en_conversacion',
         'existe_registro' => true,
         'registrado' => true,
         'evaluacion_pendiente' => false,
+        'estado_conversacion' => 'en_conversacion',
         'id_estudiante' => $id_estudiante,
-        'paso' => 'estudiante_registrado',
+        'id_evaluacion' => intval($evaluacion['id_evaluacion']),
+        'estado_animo' => $evaluacion['estado_animo'],
+        'paso' => 'en_conversacion',
         'datos' => [
             'nombre' => $estudiante['nombre'],
             'apellido' => $estudiante['apellido'],
@@ -272,7 +254,7 @@ if (mysqli_num_rows($resultado) > 0) {
             'telefono' => $estudiante['telefono'],
             'curso' => $estudiante['curso']
         ]
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
@@ -282,7 +264,97 @@ mysqli_stmt_close($stmt);
 
 /*
 |--------------------------------------------------------------------------
-| 5. USUARIO COMPLETAMENTE NUEVO
+| 4. BUSCAR EVALUACIÓN ESPERANDO DESCRIPCIÓN
+|--------------------------------------------------------------------------
+|
+| Debe:
+| - estar activa
+| - estar esperando_descripcion
+| - tener estado_animo
+|
+*/
+
+$sql = "
+    SELECT
+        id_evaluacion,
+        estado_animo,
+        estado_conversacion,
+        fecha_inicio
+    FROM evaluacion
+    WHERE id_estudiante = ?
+      AND estado = 'Activa'
+      AND estado_conversacion = 'esperando_descripcion'
+      AND estado_animo IS NOT NULL
+    ORDER BY id_evaluacion DESC
+    LIMIT 1
+";
+
+$stmt = mysqli_prepare($conexion, $sql);
+
+if (!$stmt) {
+
+    echo json_encode([
+        'success' => false,
+        'mensaje' => 'Error al buscar evaluación pendiente'
+    ], JSON_UNESCAPED_UNICODE);
+
+    mysqli_close($conexion);
+    exit;
+}
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $id_estudiante
+);
+
+mysqli_stmt_execute($stmt);
+
+$resultado_pendiente = mysqli_stmt_get_result($stmt);
+
+
+/*
+|--------------------------------------------------------------------------
+| EVALUACIÓN PENDIENTE
+|--------------------------------------------------------------------------
+*/
+
+if (mysqli_num_rows($resultado_pendiente) > 0) {
+
+    $evaluacion = mysqli_fetch_assoc($resultado_pendiente);
+
+    mysqli_stmt_close($stmt);
+    mysqli_close($conexion);
+
+    echo json_encode([
+        'success' => true,
+        'tipo_usuario' => 'estudiante',
+        'existe_registro' => true,
+        'registrado' => true,
+        'evaluacion_pendiente' => true,
+        'estado_conversacion' => 'esperando_descripcion',
+        'id_estudiante' => $id_estudiante,
+        'id_evaluacion' => intval($evaluacion['id_evaluacion']),
+        'estado_animo' => $evaluacion['estado_animo'],
+        'paso' => 'pendiente_descripcion',
+        'datos' => [
+            'nombre' => $estudiante['nombre'],
+            'apellido' => $estudiante['apellido'],
+            'correo' => $estudiante['correo'],
+            'telefono' => $estudiante['telefono'],
+            'curso' => $estudiante['curso']
+        ]
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+mysqli_stmt_close($stmt);
+
+
+/*
+|--------------------------------------------------------------------------
+| 5. ESTUDIANTE REGISTRADO SIN CONVERSACIÓN ACTIVA
 |--------------------------------------------------------------------------
 */
 
@@ -290,12 +362,22 @@ mysqli_close($conexion);
 
 echo json_encode([
     'success' => true,
-    'tipo_usuario' => 'nuevo',
-    'existe_registro' => false,
-    'registrado' => false,
+    'tipo_usuario' => 'estudiante',
+    'existe_registro' => true,
+    'registrado' => true,
     'evaluacion_pendiente' => false,
-    'paso' => null,
-    'mensaje' => 'No existe un registro para este chat_id'
-]);
+    'estado_conversacion' => null,
+    'id_estudiante' => $id_estudiante,
+    'id_evaluacion' => null,
+    'estado_animo' => null,
+    'paso' => 'estudiante_registrado',
+    'datos' => [
+        'nombre' => $estudiante['nombre'],
+        'apellido' => $estudiante['apellido'],
+        'correo' => $estudiante['correo'],
+        'telefono' => $estudiante['telefono'],
+        'curso' => $estudiante['curso']
+    ]
+], JSON_UNESCAPED_UNICODE);
 
 ?>
