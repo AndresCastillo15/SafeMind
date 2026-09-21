@@ -2,7 +2,7 @@
 
 session_start();
 
-require_once 'API/config/conexion.php';
+require_once __DIR__ . '/API/config/conexion.php';
 
 $mensaje = "";
 
@@ -11,19 +11,30 @@ $rol = $_GET['rol'] ?? 'estudiante';
 $roles = [
     'admin' => 'Administrador',
     'profesor' => 'Profesor',
-    'estudiante' => 'Estudiante',
+    'estudiante' => 'Estudiante'
 ];
 
 if (!isset($roles[$rol])) {
     $rol = 'estudiante';
 }
 
+/*
+|--------------------------------------------------------------------------
+| Configuración de inicio de sesión
+|--------------------------------------------------------------------------
+| Actualmente, la tabla profesor es la que tiene:
+| - correo
+| - contraseña
+| - estado
+|--------------------------------------------------------------------------
+*/
+
 $tablas_login = [
     'profesor' => [
-        'tabla'       => 'profesor',
-        'campo_id'    => 'id_profesor',
-        'redirigir_a' => 'dashboards/profesor/index.php',
-    ],
+        'tabla' => 'profesor',
+        'campo_id' => 'id_profesor',
+        'redirigir_a' => 'dashboards/dashboard_docente.php'
+    ]
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,66 +50,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($correo === '' || $password === '') {
 
-            $mensaje = "Completa correo y contraseña.";
+            $mensaje = "Completa el correo y la contraseña.";
 
         } else {
 
             $config = $tablas_login[$rol];
+
             $conexion = conectar();
 
-            $sql = "SELECT * FROM `{$config['tabla']}`
-                    WHERE correo = ?
-                    AND estado = 'Activo'";
+            if (!$conexion) {
 
-            $stmt = mysqli_prepare($conexion, $sql);
-
-            if (!$stmt) {
-
-                $mensaje = "Error interno al iniciar sesión. Intenta más tarde.";
+                $mensaje = "No se pudo conectar con la base de datos.";
 
             } else {
 
-                mysqli_stmt_bind_param($stmt, "s", $correo);
-                mysqli_stmt_execute($stmt);
+                /*
+                | La columna de la BD se llama `contraseña`,
+                | no `password`.
+                */
+                $sql = "SELECT *
+                        FROM `{$config['tabla']}`
+                        WHERE correo = ?
+                        AND estado = 'Activo'
+                        LIMIT 1";
 
-                $resultado = mysqli_stmt_get_result($stmt);
+                $stmt = mysqli_prepare($conexion, $sql);
 
-                if (mysqli_num_rows($resultado) === 1) {
+                if (!$stmt) {
 
-                    $usuario = mysqli_fetch_assoc($resultado);
-
-                    if (
-                        !empty($usuario['password']) &&
-                        password_verify($password, $usuario['password'])
-                    ) {
-
-                        $_SESSION['id_usuario'] = $usuario[$config['campo_id']];
-                        $_SESSION['nombre'] = $usuario['nombre'];
-                        $_SESSION['correo'] = $usuario['correo'];
-                        $_SESSION['rol'] = $rol;
-
-                        mysqli_stmt_close($stmt);
-                        mysqli_close($conexion);
-
-                        header("Location: " . $config['redirigir_a']);
-                        exit();
-
-                    } else {
-
-                        $mensaje = "Contraseña incorrecta.";
-
-                    }
+                    $mensaje = "Error interno al preparar el inicio de sesión.";
 
                 } else {
 
-                    $mensaje = "El usuario no existe, no está activo, o no pertenece a este rol.";
+                    mysqli_stmt_bind_param($stmt, "s", $correo);
+                    mysqli_stmt_execute($stmt);
 
+                    $resultado = mysqli_stmt_get_result($stmt);
+
+                    if ($resultado && mysqli_num_rows($resultado) === 1) {
+
+                        $usuario = mysqli_fetch_assoc($resultado);
+
+                        /*
+                        | La contraseña de la BD actualmente está
+                        | guardada como texto normal.
+                        */
+                        if (
+                            isset($usuario['contraseña']) &&
+                            $password === $usuario['contraseña']
+                        ) {
+
+                            $_SESSION['id_usuario'] = $usuario[$config['campo_id']];
+                            $_SESSION['nombre'] = $usuario['nombre'];
+                            $_SESSION['apellido'] = $usuario['apellido'];
+                            $_SESSION['correo'] = $usuario['correo'];
+                            $_SESSION['rol'] = $rol;
+
+                            mysqli_stmt_close($stmt);
+                            mysqli_close($conexion);
+
+                            header("Location: " . $config['redirigir_a']);
+                            exit();
+
+                        } else {
+
+                            $mensaje = "La contraseña es incorrecta.";
+                        }
+
+                    } else {
+
+                        $mensaje = "El correo no existe, no está activo o no pertenece a este rol.";
+                    }
+
+                    mysqli_stmt_close($stmt);
                 }
 
-                mysqli_stmt_close($stmt);
+                mysqli_close($conexion);
             }
-
-            mysqli_close($conexion);
         }
     }
 }
@@ -134,355 +162,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         :root {
             --paper: #F7F4ED;
             --paper-line: #E7E1D4;
-
             --ink: #1E2B2F;
             --ink-soft: #5B6B6F;
-
             --deep: #17455A;
             --deep-dark: #0E2E3D;
             --deep-light: #3A7691;
-
             --sage: #4F7F62;
             --gold: #C8922F;
-
             --radius: 16px;
-            --shadow: 0 10px 28px rgba(14, 46, 61, 0.14);
-        }
-
-        html {
-            scroll-behavior: smooth;
+            --shadow: 0 18px 40px rgba(14, 46, 61, 0.22);
         }
 
         body {
-            min-height: 100vh;
             font-family: 'Karla', sans-serif;
-            background: var(--paper);
             color: var(--ink);
-        }
-
-        h1,
-        h2,
-        .titulo {
-            font-family: 'Fraunces', serif;
-        }
-
-        a {
-            font-family: inherit;
-        }
-
-        .contenedor {
-            display: flex;
             min-height: 100vh;
-        }
-
-        /* ================= PANEL IZQUIERDO ================= */
-
-        .panel {
-            width: 400px;
-            flex-shrink: 0;
-
-            background: var(--paper);
-            padding: 44px 38px 32px;
-
-            display: flex;
-            flex-direction: column;
-
-            border-right: 1px solid var(--paper-line);
-        }
-
-        .marca {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 6px;
-
-            opacity: 0;
-            animation: aparecer 0.6s ease forwards;
-        }
-
-        .logo {
-            width: 62px;
-            height: 62px;
-            object-fit: contain;
-            border-radius: 12px;
-
-            transition: transform 0.3s ease;
-        }
-
-        .logo:hover {
-            transform: scale(1.06) rotate(-2deg);
-        }
-
-        .titulo {
-            font-size: 28px;
-            font-weight: 560;
-            color: var(--deep-dark);
-            line-height: 1.1;
-        }
-
-        .subtitulo {
-            font-size: 15px;
-            color: var(--ink-soft);
-            line-height: 1.55;
-
-            margin: 18px 0 34px;
-            max-width: 34ch;
-
-            opacity: 0;
-            animation: aparecer 0.6s ease 0.1s forwards;
-        }
-
-        .etiqueta {
-            display: inline-block;
-            width: fit-content;
-
-            margin-bottom: 12px;
-            padding: 6px 11px;
-
-            border-radius: 30px;
-            background: #E8EFEA;
-            color: var(--sage);
-
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-
-            opacity: 0;
-            animation: aparecer 0.6s ease 0.2s forwards;
-        }
-
-        /* ================= FORMULARIO ================= */
-
-        .login {
-            width: 100%;
-            max-width: 420px;
-
-            opacity: 0;
-            animation: aparecer 0.7s ease 0.25s forwards;
-        }
-
-        .login h2 {
-            color: var(--deep-dark);
-            font-size: 31px;
-            font-weight: 560;
-            line-height: 1.15;
-            margin-bottom: 9px;
-        }
-
-        .descripcion-login {
-            color: var(--ink-soft);
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        }
-
-        .campo {
-            margin-bottom: 17px;
-        }
-
-        .campo label {
-            display: block;
-            margin-bottom: 7px;
-
-            color: var(--deep-dark);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .campo input {
-            width: 100%;
-
-            padding: 14px 15px;
-
-            border: 1px solid #D8D8CE;
-            border-radius: 11px;
-
-            background: #FFFFFF;
-            color: var(--ink);
-
-            font-family: inherit;
-            font-size: 15px;
-
-            outline: none;
-
-            transition:
-                border-color 0.25s ease,
-                box-shadow 0.25s ease,
-                transform 0.25s ease;
-        }
-
-        .campo input::placeholder {
-            color: #9AA6A9;
-        }
-
-        .campo input:focus {
-            border-color: var(--deep-light);
-            box-shadow: 0 0 0 4px rgba(58, 118, 145, 0.13);
-            transform: translateY(-1px);
-        }
-
-        .boton {
-            width: 100%;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-
-            padding: 14px 18px;
-
-            border: none;
-            border-radius: 11px;
-
-            background: var(--deep);
-            color: #FFFFFF;
-
-            font-family: inherit;
-            font-size: 15px;
-            font-weight: 700;
-
-            cursor: pointer;
-
-            transition:
-                background 0.25s ease,
-                transform 0.25s ease,
-                box-shadow 0.25s ease;
-        }
-
-        .boton svg {
-            width: 18px;
-            height: 18px;
-            transition: transform 0.25s ease;
-        }
-
-        .boton:hover {
-            background: var(--deep-dark);
-            transform: translateY(-3px);
-            box-shadow: var(--shadow);
-        }
-
-        .boton:hover svg {
-            transform: translateX(4px);
-        }
-
-        .boton:active {
-            transform: translateY(0);
-        }
-
-        .error {
-            display: flex;
-            align-items: flex-start;
-            gap: 9px;
-
-            padding: 12px 13px;
-            margin-bottom: 18px;
-
-            border: 1px solid #E8BDB5;
-            border-radius: 11px;
-
-            background: #FFF0EC;
-            color: #9B3D31;
-
-            font-size: 13px;
-            line-height: 1.4;
-
-            animation: aparecer 0.4s ease;
-        }
-
-        .error svg {
-            width: 17px;
-            height: 17px;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-
-        .volver {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-
-            margin-top: 20px;
-
-            color: var(--deep-light);
-            text-decoration: none;
-
-            font-size: 14px;
-            font-weight: 700;
-
-            transition:
-                color 0.25s ease,
-                transform 0.25s ease;
-        }
-
-        .volver svg {
-            width: 16px;
-            height: 16px;
-            transition: transform 0.25s ease;
-        }
-
-        .volver:hover {
-            color: var(--deep-dark);
-            transform: translateX(-3px);
-        }
-
-        .volver:hover svg {
-            transform: translateX(-3px);
-        }
-
-        /* ================= PIE ================= */
-
-        .pie {
-            margin-top: auto;
-            padding-top: 30px;
-        }
-
-        .pie-nota {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-
-            margin-bottom: 10px;
-
-            color: var(--ink-soft);
-            font-size: 12.5px;
-        }
-
-        .pie-nota svg {
-            width: 15px;
-            height: 15px;
-            stroke: var(--sage);
-            flex-shrink: 0;
-        }
-
-        .copy {
-            color: #9AA6A9;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        /* ================= PARTE DERECHA ================= */
-
-        .principal {
             position: relative;
-            flex: 1;
-            min-height: 100vh;
             overflow: hidden;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
             background:
                 radial-gradient(
-                    120% 140% at 15% 15%,
+                    120% 140% at 15% 10%,
                     var(--deep-light) 0%,
                     transparent 55%
                 ),
                 linear-gradient(
                     165deg,
                     var(--deep) 0%,
-                    var(--deep-dark) 70%
+                    var(--deep-dark) 75%
                 );
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        h1 {
+            font-family: 'Fraunces', serif;
         }
 
         .mancha {
@@ -496,55 +211,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .mancha.sage {
             width: 340px;
             height: 340px;
-
-            top: -80px;
+            background: radial-gradient(
+                circle at 35% 35%,
+                rgba(79, 127, 98, 0.55),
+                transparent 70%
+            );
+            top: -90px;
             right: -60px;
-
-            background:
-                radial-gradient(
-                    circle at 35% 35%,
-                    rgba(79, 127, 98, 0.55),
-                    transparent 70%
-                );
-
-            animation: flotar 9s ease-in-out infinite;
         }
 
         .mancha.gold {
             width: 260px;
             height: 260px;
-
+            background: radial-gradient(
+                circle at 40% 40%,
+                rgba(200, 146, 47, 0.35),
+                transparent 70%
+            );
             bottom: -60px;
-            left: -40px;
-
-            background:
-                radial-gradient(
-                    circle at 40% 40%,
-                    rgba(200, 146, 47, 0.35),
-                    transparent 70%
-                );
-
-            animation: flotar 11s ease-in-out infinite reverse;
+            left: -50px;
         }
 
         .respirar {
             position: absolute;
-
-            width: 420px;
-            height: 420px;
-
+            width: 480px;
+            height: 480px;
             left: 50%;
-            top: 46%;
-
+            top: 50%;
             transform: translate(-50%, -50%);
             pointer-events: none;
         }
 
         .respirar circle {
             fill: none;
-            stroke: rgba(255, 255, 255, 0.45);
+            stroke: rgba(255, 255, 255, 0.35);
             stroke-width: 1;
-
             transform-origin: center;
             animation: respirar 5.5s ease-in-out infinite;
         }
@@ -555,62 +256,201 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .respirar circle:nth-child(2) {
             animation-delay: 0.5s;
-            stroke: rgba(255, 255, 255, 0.3);
+            stroke: rgba(255, 255, 255, 0.22);
         }
 
         .respirar circle:nth-child(3) {
             animation-delay: 1s;
-            stroke: rgba(255, 255, 255, 0.18);
+            stroke: rgba(255, 255, 255, 0.12);
         }
 
-        .contenido {
+        .login {
             position: relative;
             z-index: 2;
-
-            max-width: 620px;
-            padding: 40px;
-
-            color: #FFFFFF;
+            width: 100%;
+            max-width: 380px;
+            background: #ffffff;
+            padding: 40px 34px 32px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
             text-align: center;
-
             opacity: 0;
-            animation: aparecer 0.8s ease 0.4s forwards;
+            animation: aparecer 0.6s ease forwards;
         }
 
-        .contenido .pequeno {
-            margin-bottom: 18px;
-
-            color: rgba(255, 255, 255, 0.65);
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+        .login-icono {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 16px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            color: #ffffff;
         }
 
-        .contenido h1 {
-            margin-bottom: 22px;
+        .login-icono svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 1.7;
+        }
 
-            color: #FFFFFF;
-            font-size: 48px;
+        .login h1 {
+            font-size: 28px;
             font-weight: 560;
-            line-height: 1.18;
+            color: var(--deep-dark);
+            margin-bottom: 6px;
         }
 
-        .contenido p {
-            max-width: 52ch;
-            margin: 0 auto;
-
-            color: rgba(255, 255, 255, 0.82);
-            font-size: 17.5px;
-            line-height: 1.65;
+        .rol {
+            color: var(--ink-soft);
+            font-size: 14.5px;
+            margin-bottom: 26px;
         }
 
-        /* ================= ANIMACIONES ================= */
+        .error {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+            background: #FBE7E4;
+            color: #963B2A;
+            font-size: 13.5px;
+            line-height: 1.4;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+        }
+
+        .error svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+
+        .campo {
+            text-align: left;
+        }
+
+        .campo label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid var(--paper-line);
+            border-radius: 10px;
+            font-family: 'Karla', sans-serif;
+            font-size: 15px;
+            color: var(--ink);
+            background: #ffffff;
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        input::placeholder {
+            color: #9AA6A9;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 10px;
+            background: var(--accent);
+            color: #ffffff;
+            font-family: 'Karla', sans-serif;
+            font-size: 15.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition:
+                background 0.2s ease,
+                transform 0.15s ease;
+        }
+
+        button:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        button:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .volver {
+            display: inline-block;
+            margin-top: 22px;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .volver:hover {
+            text-decoration: underline;
+        }
+
+        .nota {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            margin-top: 20px;
+            color: #9AA6A9;
+            font-size: 12px;
+        }
+
+        .nota svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--sage);
+            flex-shrink: 0;
+        }
+
+        .login.admin {
+            --accent: var(--deep);
+            --accent-dark: var(--deep-dark);
+            --accent-soft: rgba(23, 69, 90, 0.14);
+        }
+
+        .login.profesor {
+            --accent: var(--sage);
+            --accent-dark: #365F44;
+            --accent-soft: rgba(79, 127, 98, 0.16);
+        }
+
+        .login.estudiante {
+            --accent: var(--gold);
+            --accent-dark: #A2751F;
+            --accent-soft: rgba(200, 146, 47, 0.18);
+        }
 
         @keyframes aparecer {
             from {
                 opacity: 0;
-                transform: translateY(18px);
+                transform: translateY(14px);
             }
 
             to {
@@ -623,115 +463,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             0%,
             100% {
                 transform: scale(0.85);
-                opacity: 0.35;
+                opacity: 0.3;
             }
 
             50% {
                 transform: scale(1.05);
-                opacity: 0.85;
-            }
-        }
-
-        @keyframes flotar {
-            0%,
-            100% {
-                transform: translate(0, 0);
-            }
-
-            50% {
-                transform: translate(15px, 20px);
-            }
-        }
-
-        /* ================= RESPONSIVE ================= */
-
-        @media (max-width: 900px) {
-
-            .contenedor {
-                flex-direction: column;
-            }
-
-            .panel {
-                width: 100%;
-                min-height: auto;
-
-                padding: 35px 30px;
-
-                border-right: none;
-                border-bottom: 1px solid var(--paper-line);
-            }
-
-            .login {
-                max-width: 520px;
-            }
-
-            .principal {
-                min-height: 430px;
-                padding: 35px 20px;
-            }
-
-            .contenido h1 {
-                font-size: 36px;
-            }
-
-            .respirar {
-                width: 310px;
-                height: 310px;
-            }
-
-            .pie {
-                margin-top: 35px;
-            }
-        }
-
-        @media (max-width: 480px) {
-
-            .panel {
-                padding: 30px 22px 26px;
-            }
-
-            .marca {
-                gap: 11px;
-            }
-
-            .logo {
-                width: 54px;
-                height: 54px;
-            }
-
-            .titulo {
-                font-size: 25px;
-            }
-
-            .login h2 {
-                font-size: 28px;
-            }
-
-            .principal {
-                min-height: 390px;
-            }
-
-            .contenido {
-                padding: 25px 15px;
-            }
-
-            .contenido h1 {
-                font-size: 31px;
-            }
-
-            .contenido p {
-                font-size: 15px;
+                opacity: 0.75;
             }
         }
 
         @media (prefers-reduced-motion: reduce) {
+            .login {
+                animation: none;
+                opacity: 1;
+            }
 
-            *,
-            *::before,
-            *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
+            .respirar circle {
+                animation: none;
+                opacity: 0.3;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 16px;
+            }
+
+            .login {
+                padding: 32px 24px 26px;
             }
         }
 
@@ -741,207 +500,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-    <div class="contenedor">
+    <div class="mancha sage"></div>
+    <div class="mancha gold"></div>
 
-        <!-- PANEL IZQUIERDO -->
+    <svg
+        class="respirar"
+        viewBox="0 0 300 300"
+        aria-hidden="true"
+    >
+        <circle cx="150" cy="150" r="60"></circle>
+        <circle cx="150" cy="150" r="95"></circle>
+        <circle cx="150" cy="150" r="130"></circle>
+    </svg>
 
-        <aside class="panel">
+    <div class="login <?php echo htmlspecialchars($rol, ENT_QUOTES, 'UTF-8'); ?>">
 
-            <div class="marca">
+        <div class="login-icono">
 
-                <img
-                    src="img/logo.png"
-                    class="logo"
-                    alt="Logo SafeMind"
+            <?php if ($rol === 'profesor'): ?>
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M3 6c2-1.2 5-1.4 7 0v12.5c-2-1.4-5-1.2-7 0V6z"/>
+                    <path d="M21 6c-2-1.2-5-1.4-7 0v12.5c2-1.4 5-1.2 7 0V6z"/>
+                </svg>
+
+            <?php elseif ($rol === 'admin'): ?>
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 3l7 3v5c0 5-3.3 8.4-7 10-3.7-1.6-7-5-7-10V6l7-3z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+
+            <?php else: ?>
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 21v-8.5"/>
+                    <path d="M12 13c-4.2 0-7.5-2.8-7.5-7 4.2 0 7.5 2.1 7.5 5.2"/>
+                    <path d="M12 11.4c0-3.4 3.1-5.9 7.5-5.9 0 4.3-3.3 7.4-7.5 6.5"/>
+                </svg>
+
+            <?php endif; ?>
+
+        </div>
+
+        <h1>SafeMind</h1>
+
+        <p class="rol">
+            Estás iniciando sesión como
+            <?php echo strtolower($roles[$rol]); ?>
+        </p>
+
+        <?php if ($mensaje !== ""): ?>
+
+            <div class="error">
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 8v5"/>
+                    <path d="M12 16h.01"/>
+                </svg>
+
+                <span>
+                    <?php echo htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8'); ?>
+                </span>
+
+            </div>
+
+        <?php endif; ?>
+
+        <form method="POST" action="">
+
+            <div class="campo">
+
+                <label for="correo">Correo electrónico</label>
+
+                <input
+                    type="email"
+                    id="correo"
+                    name="correo"
+                    placeholder="Ingresa tu correo"
+                    autocomplete="username"
+                    required
                 >
 
-                <h1 class="titulo">SafeMind</h1>
+            </div>
+
+            <div class="campo">
+
+                <label for="password">Contraseña</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Ingresa tu contraseña"
+                    autocomplete="current-password"
+                    required
+                >
 
             </div>
 
-            <p class="subtitulo">
-                Acompañamos el bienestar emocional de cada
-                estudiante, con apoyo profesional disponible
-                cuando más se necesita.
-            </p>
+            <button type="submit">
+                Ingresar
+            </button>
 
-            <span class="etiqueta">
-                ACCESO SEGURO
-            </span>
+        </form>
 
-            <section class="login">
+        <a href="index.php" class="volver">
+            Volver al inicio
+        </a>
 
-                <h2>
-                    Bienvenido de nuevo
-                </h2>
-
-                <p class="descripcion-login">
-                    Inicia sesión para continuar en tu espacio de SafeMind.
-                </p>
-
-                <?php if ($mensaje != ""): ?>
-
-                    <div class="error">
-
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-
-                        <span>
-                            <?php echo htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8'); ?>
-                        </span>
-
-                    </div>
-
-                <?php endif; ?>
-
-                <form method="POST">
-
-                    <div class="campo">
-
-                        <label for="correo">
-                            Correo electrónico
-                        </label>
-
-                        <input
-                            type="email"
-                            id="correo"
-                            name="correo"
-                            placeholder="ejemplo@correo.com"
-                            autocomplete="email"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="campo">
-
-                        <label for="password">
-                            Contraseña
-                        </label>
-
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder="Escribe tu contraseña"
-                            autocomplete="current-password"
-                            required
-                        >
-
-                    </div>
-
-                    <button type="submit" class="boton">
-
-                        Ingresar
-
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-
-                    </button>
-
-                </form>
-
-                <a href="index.php" class="volver">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-
-                    Volver al inicio
-
-                </a>
-
-            </section>
-
-            <footer class="pie">
-
-                <p class="pie-nota">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M12 3l7 3v5c0 5-3.3 8.4-7 10-3.7-1.6-7-5-7-10V6l7-3z"/>
-                    </svg>
-
-                    Tus datos y conversaciones son confidenciales
-
-                </p>
-
-                <p class="copy">
-                    SafeMind · Sistema de acompañamiento al bienestar estudiantil
-                </p>
-
-            </footer>
-
-        </aside>
-
-        <!-- PARTE DERECHA -->
-
-        <main class="principal">
-
-            <div class="mancha sage"></div>
-            <div class="mancha gold"></div>
+        <p class="nota">
 
             <svg
-                class="respirar"
-                viewBox="0 0 300 300"
-                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
             >
-                <circle cx="150" cy="150" r="60"></circle>
-                <circle cx="150" cy="150" r="95"></circle>
-                <circle cx="150" cy="150" r="130"></circle>
+                <path d="M12 3l7 3v5c0 5-3.3 8.4-7 10-3.7-1.6-7-5-7-10V6l7-3z"/>
             </svg>
 
-            <div class="contenido">
+            Conexión protegida
 
-                <p class="pequeno">
-                    Un espacio para ti
-                </p>
-
-                <h1>
-                    Aquí, cada estudiante puede ser escuchado
-                </h1>
-
-                <p>
-                    Un espacio seguro donde emociones, dudas y momentos
-                    difíciles encuentran acompañamiento profesional,
-                    antes de que se conviertan en una crisis.
-                </p>
-
-            </div>
-
-        </main>
+        </p>
 
     </div>
 

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 162.210.70.175
--- Tiempo de generación: 08-09-2026 a las 11:18:43
+-- Tiempo de generación: 16-09-2026 a las 22:46:11
 -- Versión del servidor: 5.7.23-23
 -- Versión de PHP: 7.0.33-0ubuntu0.16.04.16
 
@@ -19,7 +19,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `Safemind`
+-- Base de datos: `colegdfs_safemind`
 --
 
 -- --------------------------------------------------------
@@ -50,6 +50,13 @@ CREATE TABLE `analisis_ia` (
   `resumen` text,
   `fecha` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Volcado de datos para la tabla `analisis_ia`
+--
+
+INSERT INTO `analisis_ia` (`id_analisis`, `id_evaluacion`, `id_nivel`, `emocion_detectada`, `porcentaje_confianza`, `resumen`, `fecha`) VALUES
+(1, 1, 1, 'Entusiasmo y alegría', '98.00', 'El estudiante manifiesta sentirse bien y emocionado tras haber recibido una bicicleta de cumpleaños. Expresa planes positivos para estrenarla en un parque junto a sus amigos.', '2026-09-17 04:01:10');
 
 -- --------------------------------------------------------
 
@@ -85,7 +92,7 @@ CREATE TABLE `estudiante` (
 --
 
 INSERT INTO `estudiante` (`id_estudiante`, `nombre`, `apellido`, `correo`, `telefono`, `curso`, `chat_id_telegram`, `estado`, `ultimo_registro`) VALUES
-(5, 'Nicolás', 'Cabrera', 'Hdjdjd', '173747', '11', 8860427697, 'activo', '2026-09-08 16:32:11');
+(1, 'Nicolás Alfonso', 'Cabrera Suárez', 'Xoiziz', '145664', '111', 8860427697, 'activo', '2026-09-17 03:59:09');
 
 -- --------------------------------------------------------
 
@@ -99,8 +106,16 @@ CREATE TABLE `evaluacion` (
   `estado_animo` varchar(30) DEFAULT NULL,
   `fecha_inicio` datetime DEFAULT CURRENT_TIMESTAMP,
   `fecha_fin` datetime DEFAULT NULL,
-  `estado` varchar(20) DEFAULT 'Activa'
+  `estado` varchar(20) DEFAULT 'Activa',
+  `estado_conversacion` varchar(30) NOT NULL DEFAULT 'esperando_descripcion'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Volcado de datos para la tabla `evaluacion`
+--
+
+INSERT INTO `evaluacion` (`id_evaluacion`, `id_estudiante`, `estado_animo`, `fecha_inicio`, `fecha_fin`, `estado`, `estado_conversacion`) VALUES
+(1, 1, 'Bien', '2026-09-17 03:59:10', '2026-09-17 04:01:10', 'Finalizada', 'finalizada');
 
 -- --------------------------------------------------------
 
@@ -115,6 +130,17 @@ CREATE TABLE `mensaje` (
   `contenido` text NOT NULL,
   `fecha_hora` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Volcado de datos para la tabla `mensaje`
+--
+
+INSERT INTO `mensaje` (`id_mensaje`, `id_evaluacion`, `remitente`, `contenido`, `fecha_hora`) VALUES
+(1, 1, 'estudiante', 'Estoy bien porque,  me regalaron uns bicicleta de cumpleaños', '2026-09-17 03:59:46'),
+(2, 1, 'ia', '¡Qué genial, muchas felicidades! ¿Ya tuviste oportunidad de salir a estrenarla?', '2026-09-17 03:59:57'),
+(3, 1, 'estudiante', 'Aun no, pero puede que mañana si, estoy emocionado', '2026-09-17 04:00:21'),
+(4, 1, 'ia', '¡Qué buena noticia! ¿Tienes algún lugar especial en mente para ir mañana?', '2026-09-17 04:00:25'),
+(5, 1, 'estudiante', 'Puede que en el parque con unos amigos, la pueda estrenar', '2026-09-17 04:01:04');
 
 -- --------------------------------------------------------
 
@@ -138,6 +164,29 @@ INSERT INTO `nivel_riesgo` (`id_nivel`, `nombre`, `descripcion`, `color`) VALUES
 (2, 'Alerta', 'Seguimiento', 'Amarillo'),
 (3, 'Riesgo', 'Intervención', 'Naranja'),
 (4, 'Crisis', 'Urgente', 'Rojo');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `profesor`
+--
+
+CREATE TABLE `profesor` (
+  `id_profesor` int(11) NOT NULL,
+  `nombre` varchar(100) DEFAULT NULL,
+  `apellido` varchar(100) DEFAULT NULL,
+  `correo` varchar(150) DEFAULT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `estado` varchar(20) DEFAULT 'Activo',
+  `contraseña` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Volcado de datos para la tabla `profesor`
+--
+
+INSERT INTO `profesor` (`id_profesor`, `nombre`, `apellido`, `correo`, `telefono`, `estado`, `contraseña`) VALUES
+(1, 'Nestor', 'Paez', 'npaez@gmail.com', '777', 'Activo', '12345');
 
 -- --------------------------------------------------------
 
@@ -171,16 +220,6 @@ CREATE TABLE `recurso_apoyo` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `registro_emocional`
---
-
-CREATE TABLE `registro_emocional` (
-  `asdas` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `registro_temporal`
 --
 
@@ -195,13 +234,6 @@ CREATE TABLE `registro_temporal` (
   `creado_en` datetime DEFAULT CURRENT_TIMESTAMP,
   `actualizado_en` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Volcado de datos para la tabla `registro_temporal`
---
-
-INSERT INTO `registro_temporal` (`chat_id_telegram`, `paso`, `nombre`, `apellido`, `correo`, `telefono`, `curso`, `creado_en`, `actualizado_en`) VALUES
-(8860427697, 'completado', 'Nicolás', '/inicio', '/inicio', '/inicio', '/inicio', '2026-09-08 16:32:24', '2026-09-08 16:44:37');
 
 -- --------------------------------------------------------
 
@@ -273,6 +305,13 @@ ALTER TABLE `nivel_riesgo`
   ADD PRIMARY KEY (`id_nivel`);
 
 --
+-- Indices de la tabla `profesor`
+--
+ALTER TABLE `profesor`
+  ADD PRIMARY KEY (`id_profesor`),
+  ADD UNIQUE KEY `correo` (`correo`);
+
+--
 -- Indices de la tabla `psicologo`
 --
 ALTER TABLE `psicologo`
@@ -312,22 +351,27 @@ ALTER TABLE `alerta`
 -- AUTO_INCREMENT de la tabla `analisis_ia`
 --
 ALTER TABLE `analisis_ia`
-  MODIFY `id_analisis` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_analisis` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
 -- AUTO_INCREMENT de la tabla `estudiante`
 --
 ALTER TABLE `estudiante`
-  MODIFY `id_estudiante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_estudiante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
 -- AUTO_INCREMENT de la tabla `evaluacion`
 --
 ALTER TABLE `evaluacion`
-  MODIFY `id_evaluacion` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_evaluacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
 -- AUTO_INCREMENT de la tabla `mensaje`
 --
 ALTER TABLE `mensaje`
-  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+--
+-- AUTO_INCREMENT de la tabla `profesor`
+--
+ALTER TABLE `profesor`
+  MODIFY `id_profesor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
 -- AUTO_INCREMENT de la tabla `psicologo`
 --
