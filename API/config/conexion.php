@@ -1,23 +1,22 @@
 <?php
-    // script para crear una conexión con la BD
 
-    require_once 'constantes.php';
+date_default_timezone_set('America/Bogota');
 
-    function conectar()
-    {
-        $conexion = mysqli_connect(HOST, USER, PW, BD);
+// script para crear una conexión con la BD
 
-        if(!$conexion)
-          {
-        die("Error: ".mysqli_connect_error());
-          }
+require_once 'constantes.php';
 
-        mysqli_set_charset($conexion,"utf8mb4");
+function conectar()
+{
+    $conexion = mysqli_connect(HOST, USER, PW, BD);
 
-        return $conexion;
+    if (!$conexion) {
+        die("Error: " . mysqli_connect_error());
     }
 
-    //Probar conexion a BD
-    //echo '<br>Probando conexión a la BD ...';
-    //$con = conectar(); 
-?>
+    mysqli_set_charset($conexion, "utf8mb4");
+
+    mysqli_query($conexion, "SET time_zone = '-05:00'");
+
+    return $conexion;
+}
