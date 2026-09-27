@@ -104,6 +104,41 @@
             flex-shrink: 0;
         }
 
+        .identidad-colegio {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 10px 12px;
+            border: 1px solid var(--paper-line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.72);
+            opacity: 0;
+            animation: aparecer 0.6s ease 0.05s forwards;
+        }
+
+        .escudo-colegio {
+            width: 44px;
+            height: 56px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .identidad-colegio strong {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--deep-dark);
+            margin-bottom: 2px;
+        }
+
+        .identidad-colegio span {
+            display: block;
+            font-size: 11.5px;
+            line-height: 1.35;
+            color: var(--ink-soft);
+        }
+
         .titulo {
             font-size: 26px;
             font-weight: 560;
@@ -115,7 +150,7 @@
             font-size: 15px;
             color: var(--ink-soft);
             line-height: 1.55;
-            margin: 18px 0 36px;
+            margin: 18px 0 28px;
             max-width: 34ch;
 
             opacity: 0;
@@ -203,11 +238,11 @@
             border-color: var(--sage);
         }
 
-        .rol-card.estudiante .rol-icono {
+        .rol-card.psicologo .rol-icono {
             background: var(--gold);
             color: #fff;
         }
-        .rol-card.estudiante:hover {
+        .rol-card.psicologo:hover {
             border-color: var(--gold);
         }
 
@@ -364,7 +399,7 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .marca, .subtitulo, .rol-card, .contenido {
+            .marca, .identidad-colegio, .subtitulo, .rol-card, .contenido {
                 animation: none;
                 opacity: 1;
             }
@@ -409,6 +444,11 @@
                 padding: 32px 22px 26px;
             }
 
+            .escudo-colegio {
+                width: 40px;
+                height: 52px;
+            }
+
             .rol-card {
                 padding: 14px;
             }
@@ -447,18 +487,35 @@
 
         </div>
 
+        <div class="identidad-colegio">
+
+            <img
+                src="img/escudo_colegio.png"
+                class="escudo-colegio"
+                alt="Escudo del Colegio San José de Guanentá"
+            >
+
+            <div>
+                <strong>Colegio San José de Guanentá</strong>
+                <span>San Gil · Sistema de acompañamiento al bienestar estudiantil</span>
+            </div>
+
+        </div>
+
         <p class="subtitulo">
-            Acompañamos el bienestar emocional de cada
-            estudiante, con apoyo profesional disponible
-            cuando más se necesita.
+            <strong>¿Qué es SafeMind?</strong><br>
+            Es un sistema de acompañamiento al bienestar emocional estudiantil.
+            Su propósito es brindar orientación inicial y facilitar un seguimiento
+            responsable cuando un estudiante necesita apoyo.
         </p>
 
 
         <!-- ACCESO POR ROL -->
+        <!-- Reemplaza href="#" por las rutas que quieras usar. -->
 
         <nav class="roles">
 
-            <a href="login.php?rol=admin" class="rol-card admin">
+            <a href="#" class="rol-card admin">
                 <span class="rol-icono">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 3l7 3v5c0 5-3.3 8.4-7 10-3.7-1.6-7-5-7-10V6l7-3z"/>
@@ -467,11 +524,11 @@
                 </span>
                 <span class="rol-texto">
                     <span class="rol-nombre">Administrador</span>
-                    <span class="rol-desc">Gestiona usuarios, reportes y configuración</span>
+                    <span class="rol-desc">Gestiona usuarios, reportes y configuración del sistema</span>
                 </span>
             </a>
 
-            <a href="login.php?rol=profesor" class="rol-card profesor">
+            <a href="https://safemind.colegioguanenta.edu.co/login.php?rol=profesor" class="rol-card profesor">
                 <span class="rol-icono">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 6c2-1.2 5-1.4 7 0v12.5c-2-1.4-5-1.2-7 0V6z"/>
@@ -479,22 +536,23 @@
                     </svg>
                 </span>
                 <span class="rol-texto">
-                    <span class="rol-nombre">Profesor</span>
-                    <span class="rol-desc">Da seguimiento al bienestar de tus estudiantes</span>
+                    <span class="rol-nombre">Docente</span>
+                    <span class="rol-desc">Consulta información general sobre el bienestar de su curso</span>
                 </span>
             </a>
 
-            <a href="login.php?rol=estudiante" class="rol-card estudiante">
+            <a href="https://safemind.colegioguanenta.edu.co/login.php?rol=psicologo" class="rol-card psicologo">
                 <span class="rol-icono">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 21v-8.5"/>
-                        <path d="M12 13c-4.2 0-7.5-2.8-7.5-7 4.2 0 7.5 2.1 7.5 5.2"/>
-                        <path d="M12 11.4c0-3.4 3.1-5.9 7.5-5.9 0 4.3-3.3 7.4-7.5 6.5"/>
+                        <circle cx="12" cy="8" r="3"/>
+                        <path d="M5 21c.6-4 3-6 7-6s6.4 2 7 6"/>
+                        <path d="M19 3v4"/>
+                        <path d="M17 5h4"/>
                     </svg>
                 </span>
                 <span class="rol-texto">
-                    <span class="rol-nombre">Estudiante</span>
-                    <span class="rol-desc">Encuentra apoyo, recursos y un espacio para hablar</span>
+                    <span class="rol-nombre">Orientador / Psicólogo</span>
+                    <span class="rol-desc">Consulta alertas y realiza seguimiento profesional</span>
                 </span>
             </a>
 
