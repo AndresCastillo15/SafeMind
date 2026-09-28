@@ -566,6 +566,28 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
 
+        /* =========================================================
+           CONTACTO DEL ESTUDIANTE
+        ========================================================== */
+
+        .contacto-dato {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .contacto-dato a {
+            color: var(--deep);
+            text-decoration: none;
+            word-break: break-word;
+        }
+
+        .contacto-dato a:hover {
+            text-decoration: underline;
+        }
+
+
         .badge-riesgo {
 
             display: inline-block;
@@ -1836,6 +1858,41 @@ async function cargarCaso() {
                             )}
 
                         </span>
+
+
+                    <div class="dato contacto-dato">
+
+                        <strong>
+
+                            Teléfono:
+
+                        </strong>
+
+                        ${
+                            estudiante.telefono
+                                ? `<a href="tel:${escapar(estudiante.telefono)}">${escapar(estudiante.telefono)}</a>`
+                                : '<span>Sin teléfono</span>'
+                        }
+
+                    </div>
+
+
+                    <div class="dato contacto-dato">
+
+                        <strong>
+
+                            Correo:
+
+                        </strong>
+
+                        ${
+                            estudiante.correo
+                                ? `<a href="mailto:${escapar(estudiante.correo)}">${escapar(estudiante.correo)}</a>`
+                                : '<span>Sin correo</span>'
+                        }
+
+                    </div>
+
 
                     </div>
 

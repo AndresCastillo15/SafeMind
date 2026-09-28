@@ -152,6 +152,7 @@
             line-height: 1.55;
             margin: 18px 0 28px;
             max-width: 34ch;
+            text-align: justify;
 
             opacity: 0;
             animation: aparecer 0.6s ease 0.1s forwards;
