@@ -677,6 +677,81 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
         }
 
 
+        .privacidad-nota {
+            margin-bottom: 22px;
+            padding: 12px 14px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--sage);
+            border-radius: 10px;
+            color: var(--ink-soft);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .estado-curso-contenido {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .riesgo-fila {
+            display: grid;
+            grid-template-columns: 125px 1fr 35px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .riesgo-nombre {
+            font-size: 13px;
+            color: var(--ink-soft);
+        }
+
+        .barra {
+            height: 9px;
+            background: #EEEAE2;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .barra-interna {
+            height: 100%;
+            border-radius: 20px;
+            transition: width .45s ease;
+        }
+
+        .barra-verde { background: var(--sage); }
+        .barra-amarilla { background: var(--gold); }
+        .barra-naranja { background: #D87A3D; }
+        .barra-roja { background: var(--red); }
+
+        .riesgo-cantidad {
+            text-align: right;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--deep-dark);
+        }
+
+        .actividad-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .actividad-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--line);
+            font-size: 13px;
+        }
+
+        .actividad-item:last-child { border-bottom: none; }
+        .actividad-item span { color: var(--ink-soft); }
+        .actividad-item strong { color: var(--deep-dark); }
+
         /* =========================================================
            RESPONSIVE
         ========================================================= */
@@ -818,8 +893,8 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
                 🔔 &nbsp; Estadísticas
             </a>
 
-            <a href="#">
-                👤 &nbsp; Mis estudiantes
+            <a href="#estado-curso">
+                📊 &nbsp; Mi curso
             </a>
 
         </nav>
@@ -860,6 +935,13 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
     <main class="main">
 
 
+        <div class="privacidad-nota">
+            Este panel presenta únicamente información estadística y agregada
+            del curso. Las conversaciones y los datos individuales permanecen
+            restringidos al equipo de orientación.
+        </div>
+
+
         <!-- Encabezado -->
 
         <div class="topbar">
@@ -871,7 +953,7 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
                 </h1>
 
                 <p>
-                    Acompañamiento y seguimiento de tus estudiantes
+                    Panorama general del bienestar de tu curso
                 </p>
 
             </div>
@@ -879,7 +961,7 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
 
             <div class="fecha">
 
-                22 de septiembre de 2026
+                <?php echo date('d/m/Y'); ?>
 
                 <span>
                     Curso:
@@ -899,120 +981,42 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
 
         <section class="estadisticas">
 
-
             <div class="card">
-
                 <div class="card-top">
-
-                    <div class="icono rojo">
-                        ⚠
-                    </div>
-
-                    <h3>
-                        Alertas activas
-                    </h3>
-
+                    <div class="icono rojo">⚠</div>
+                    <h3>Alertas activas</h3>
                 </div>
-
-                <div class="numero">
-                    0
-                </div>
-
-                <div class="descripcion">
-                    Requieren atención
-                </div>
-
-                <a
-                    href="#"
-                    class="enlace"
-                >
-                    Ver estadísticas →
-                </a>
-
+                <div class="numero" id="total-alertas">—</div>
+                <div class="descripcion">Del curso</div>
+                <a href="#estado-curso" class="enlace">Ver estado →</a>
             </div>
 
-
             <div class="card">
-
                 <div class="card-top">
-
-                    <div class="icono oro">
-                        ♙
-                    </div>
-
-                    <h3>
-                        Estudiantes
-                    </h3>
-
+                    <div class="icono oro">♙</div>
+                    <h3>Estudiantes</h3>
                 </div>
-
-                <div class="numero">
-                    0
-                </div>
-
-                <div class="descripcion">
-                    Con evaluaciones
-                </div>
-
-                <a
-                    href="#"
-                    class="enlace"
-                >
-                    Ver todos →
-                </a>
-
+                <div class="numero" id="total-estudiantes">—</div>
+                <div class="descripcion">Con evaluaciones</div>
             </div>
 
-
             <div class="card">
-
                 <div class="card-top">
-
-                    <div class="icono verde">
-                        🌿
-                    </div>
-
-                    <h3>
-                        Evaluaciones
-                    </h3>
-
+                    <div class="icono verde">🌿</div>
+                    <h3>Evaluaciones</h3>
                 </div>
-
-                <div class="numero">
-                    0
-                </div>
-
-                <div class="descripcion">
-                    Realizadas
-                </div>
-
+                <div class="numero" id="total-evaluaciones">—</div>
+                <div class="descripcion">Registradas</div>
             </div>
 
-
             <div class="card">
-
                 <div class="card-top">
-
-                    <div class="icono azul">
-                        ✓
-                    </div>
-
-                    <h3>
-                        Seguimientos
-                    </h3>
-
+                    <div class="icono azul">✓</div>
+                    <h3>Seguimientos</h3>
                 </div>
-
-                <div class="numero">
-                    0
-                </div>
-
-                <div class="descripcion">
-                    Este mes
-                </div>
-
+                <div class="numero" id="total-seguimientos">—</div>
+                <div class="descripcion">Este mes</div>
             </div>
-
 
         </section>
 
@@ -1023,52 +1027,30 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
 
         <section class="contenido">
 
-
-            <div class="panel">
+            <div class="panel" id="estado-curso">
 
                 <div class="panel-header">
-
-                    <h2>
-                        Estado de mi curso
-                    </h2>
-
-                    <span>
-                        <?php
-                        echo htmlspecialchars($curso);
-                        ?>
-                    </span>
-
+                    <h2>Estado de mi curso</h2>
+                    <span><?php echo htmlspecialchars($curso); ?></span>
                 </div>
 
-
-                <div class="vacio">
-
-                    Las estadísticas de tu curso aparecerán aquí.
-
+                <div id="estado-curso-contenido" class="estado-curso-contenido">
+                    <div class="vacio">Cargando estadísticas del curso...</div>
                 </div>
 
             </div>
 
-
             <div class="panel">
 
                 <div class="panel-header">
-
-                    <h2>
-                        Actividad reciente
-                    </h2>
-
+                    <h2>Actividad reciente</h2>
                 </div>
 
-
-                <div class="vacio">
-
-                    No hay actividad reciente.
-
+                <div id="actividad-reciente" class="actividad-lista">
+                    <div class="vacio">Cargando actividad...</div>
                 </div>
 
             </div>
-
 
         </section>
 
@@ -1076,6 +1058,158 @@ $curso = $_SESSION['curso'] ?? 'Sin curso asignado';
     </main>
 
 </div>
+
+<script>
+
+const API_ESTADISTICAS =
+    '../API/profesor/estadisticas_curso.php';
+
+function escapar(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto ?? '';
+    return div.innerHTML;
+}
+
+function formatearPeriodo(periodo) {
+    if (!periodo || !periodo.includes('-')) return periodo || '';
+
+    const [anio, mes] = periodo.split('-');
+    const meses = [
+        'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+        'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    ];
+
+    return `${meses[Number(mes) - 1] || ''} ${anio || ''}`;
+}
+
+function actualizarRiesgo(riesgo) {
+
+    const niveles = [
+        { id: 1, nombre: 'Bien', clase: 'verde' },
+        { id: 2, nombre: 'Alerta', clase: 'amarilla' },
+        { id: 3, nombre: 'Riesgo', clase: 'naranja' },
+        { id: 4, nombre: 'Crisis', clase: 'roja' }
+    ];
+
+    const cantidades = niveles.map(
+        nivel => Number(riesgo?.[`nivel_${nivel.id}`] || 0)
+    );
+
+    const maximo = Math.max(...cantidades, 1);
+    const contenedor = document.getElementById('estado-curso-contenido');
+
+    contenedor.innerHTML = niveles.map((nivel, index) => {
+
+        const cantidad = cantidades[index];
+        const porcentaje = (cantidad / maximo) * 100;
+
+        return `
+            <div class="riesgo-fila">
+                <div class="riesgo-nombre">${escapar(nivel.nombre)}</div>
+                <div class="barra">
+                    <div
+                        class="barra-interna barra-${nivel.clase}"
+                        style="width: ${porcentaje}%"
+                    ></div>
+                </div>
+                <div class="riesgo-cantidad">${cantidad}</div>
+            </div>
+        `;
+
+    }).join('');
+}
+
+function actualizarActividad(tendencia) {
+
+    const contenedor = document.getElementById('actividad-reciente');
+
+    if (!Array.isArray(tendencia) || tendencia.length === 0) {
+        contenedor.innerHTML = `
+            <div class="vacio">
+                No hay evaluaciones registradas recientemente.
+            </div>
+        `;
+        return;
+    }
+
+    contenedor.innerHTML = tendencia.slice(-5).reverse().map(item => `
+        <div class="actividad-item">
+            <span>${escapar(formatearPeriodo(item.periodo))}</span>
+            <strong>${Number(item.cantidad || 0)} evaluación(es)</strong>
+        </div>
+    `).join('');
+}
+
+async function cargarDashboard() {
+
+    try {
+
+        const respuesta = await fetch(
+            API_ESTADISTICAS,
+            {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'same-origin'
+            }
+        );
+
+        if (!respuesta.ok) {
+            throw new Error('No se pudieron obtener las estadísticas.');
+        }
+
+        const datos = await respuesta.json();
+
+        if (!datos.success) {
+            throw new Error(
+                datos.mensaje ||
+                'La API no pudo cargar las estadísticas.'
+            );
+        }
+
+        const estadisticas = datos.estadisticas || {};
+        const riesgo = datos.riesgo || {};
+
+        document.getElementById('total-alertas').textContent =
+            Number(estadisticas.alertas_activas || 0);
+
+        document.getElementById('total-estudiantes').textContent =
+            Number(estadisticas.estudiantes_evaluados || 0);
+
+        document.getElementById('total-evaluaciones').textContent =
+            Number(estadisticas.total_evaluaciones || 0);
+
+        document.getElementById('total-seguimientos').textContent =
+            Number(estadisticas.seguimientos_mes || 0);
+
+        actualizarRiesgo(riesgo);
+        actualizarActividad(datos.tendencia || []);
+
+    } catch (error) {
+
+        console.error('Error dashboard docente:', error);
+
+        ['total-alertas', 'total-estudiantes', 'total-evaluaciones', 'total-seguimientos']
+            .forEach(id => {
+                document.getElementById(id).textContent = '—';
+            });
+
+        document.getElementById('estado-curso-contenido').innerHTML = `
+            <div class="vacio">
+                No fue posible cargar las estadísticas del curso.
+            </div>
+        `;
+
+        document.getElementById('actividad-reciente').innerHTML = `
+            <div class="vacio">
+                No fue posible cargar la actividad reciente.
+            </div>
+        `;
+    }
+}
+
+cargarDashboard();
+
+</script>
 
 </body>
 
