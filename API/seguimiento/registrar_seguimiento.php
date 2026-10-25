@@ -1,359 +1,465 @@
 <?php
+/**
+ * SafeMind - Registro de seguimiento profesional.
+ * Solo para psicólogos autenticados y activos.
+ */
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
-session_start();
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
 
-require_once '../config/conexion.php';
+function responder_json(int $codigo_http, array $datos): void
+{
+    http_response_code($codigo_http);
 
+    echo json_encode(
+        $datos,
+        JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+    );
+
+    exit;
+}
 
 /*
 |--------------------------------------------------------------------------
-| Verificar sesión de psicólogo
+| 1. Validar método HTTP
 |--------------------------------------------------------------------------
 */
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    header('Allow: POST');
+
+    responder_json(405, [
+        'success' => false,
+        'mensaje' => 'Método no permitido.'
+    ]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| 2. Validar sesión y rol
+|--------------------------------------------------------------------------
+*/
+
+$rol = $_SESSION['rol'] ?? '';
+
+$id_psicologo = filter_var(
+    $_SESSION['id_usuario'] ?? null,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
 
 if (
-    !isset($_SESSION['rol']) ||
-    $_SESSION['rol'] !== 'psicologo'
+    $rol !== 'psicologo' ||
+    $id_psicologo === false ||
+    $id_psicologo === null
 ) {
-
-    echo json_encode([
+    responder_json(403, [
         'success' => false,
-        'mensaje' => 'No autorizado'
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
+        'mensaje' => 'No autorizado.'
+    ]);
 }
-
 
 /*
 |--------------------------------------------------------------------------
-| Obtener psicólogo desde la sesión
+| 3. Validar token CSRF
 |--------------------------------------------------------------------------
 */
 
-$id_psicologo = isset($_SESSION['id_usuario'])
-    ? intval($_SESSION['id_usuario'])
-    : 0;
+$csrf_sesion = $_SESSION['csrf_token'] ?? null;
+$csrf_recibido = $_POST['csrf_token'] ?? null;
 
-
-if ($id_psicologo <= 0) {
-
-    echo json_encode([
+if (
+    !is_string($csrf_sesion) ||
+    !preg_match('/\A[a-f0-9]{64}\z/', $csrf_sesion) ||
+    !is_string($csrf_recibido) ||
+    !hash_equals($csrf_sesion, $csrf_recibido)
+) {
+    responder_json(403, [
         'success' => false,
-        'mensaje' => 'Sesión de psicólogo no válida'
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
+        'mensaje' =>
+            'Solicitud no autorizada. Actualiza la página e inténtalo de nuevo.'
+    ]);
 }
-
 
 /*
 |--------------------------------------------------------------------------
-| Datos enviados
+| 4. Validar datos recibidos
 |--------------------------------------------------------------------------
 */
 
-$id_alerta = isset($_POST['id_alerta'])
-    ? intval($_POST['id_alerta'])
-    : 0;
+$id_alerta = filter_var(
+    $_POST['id_alerta'] ?? null,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
 
 $observacion = trim(
-    $_POST['observacion'] ?? ''
+    (string) ($_POST['observacion'] ?? '')
 );
 
+$longitud_observacion = function_exists('mb_strlen')
+    ? mb_strlen($observacion, 'UTF-8')
+    : strlen($observacion);
 
-/*
-|--------------------------------------------------------------------------
-| Validar datos
-|--------------------------------------------------------------------------
-*/
-
-if ($id_alerta <= 0) {
-
-    echo json_encode([
+if ($id_alerta === false || $id_alerta === null) {
+    responder_json(400, [
         'success' => false,
-        'mensaje' => 'ID de alerta no válido'
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
+        'mensaje' => 'ID de alerta no válido.'
+    ]);
 }
-
 
 if ($observacion === '') {
-
-    echo json_encode([
+    responder_json(400, [
         'success' => false,
-        'mensaje' => 'La observación es obligatoria'
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
+        'mensaje' => 'La observación es obligatoria.'
+    ]);
 }
 
+if ($longitud_observacion > 5000) {
+    responder_json(400, [
+        'success' => false,
+        'mensaje' =>
+            'La observación no puede superar los 5000 caracteres.'
+    ]);
+}
 
 /*
 |--------------------------------------------------------------------------
-| Conexión
+| 5. Conexión y transacción
 |--------------------------------------------------------------------------
 */
 
-$conexion = conectar();
+$conexion = null;
+$transaccion_iniciada = false;
 
+try {
+    require_once __DIR__ . '/../config/conexion.php';
 
-/*
-|--------------------------------------------------------------------------
-| Verificar que la alerta exista
-|--------------------------------------------------------------------------
-*/
+    $conexion = conectar();
 
-$sql_alerta = "
-    SELECT
-        id_alerta,
-        estado
+    if (!$conexion instanceof mysqli) {
+        throw new RuntimeException(
+            'La conexión a la base de datos no es válida.'
+        );
+    }
 
-    FROM alerta
+    if (!mysqli_begin_transaction($conexion)) {
+        throw new RuntimeException(
+            'No se pudo iniciar la transacción.'
+        );
+    }
 
-    WHERE id_alerta = ?
+    $transaccion_iniciada = true;
 
-    LIMIT 1
-";
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Confirmar que el psicólogo siga activo
+    |--------------------------------------------------------------------------
+    */
 
+    $sql_psicologo = "
+        SELECT id_psicologo
+        FROM psicologo
+        WHERE id_psicologo = ?
+          AND estado = 'Activo'
+        LIMIT 1
+        FOR UPDATE
+    ";
 
-$stmt_alerta = mysqli_prepare(
-    $conexion,
-    $sql_alerta
-);
-
-
-if (!$stmt_alerta) {
-
-    echo json_encode([
-        'success' => false,
-        'mensaje' => 'No se pudo preparar la consulta'
-    ], JSON_UNESCAPED_UNICODE);
-
-    mysqli_close($conexion);
-
-    exit;
-}
-
-
-mysqli_stmt_bind_param(
-    $stmt_alerta,
-    "i",
-    $id_alerta
-);
-
-
-mysqli_stmt_execute(
-    $stmt_alerta
-);
-
-
-$resultado_alerta =
-    mysqli_stmt_get_result(
-        $stmt_alerta
+    $stmt_psicologo = mysqli_prepare(
+        $conexion,
+        $sql_psicologo
     );
 
+    if (!$stmt_psicologo) {
+        throw new RuntimeException(
+            'No se pudo preparar la validación del psicólogo.'
+        );
+    }
 
-if (
-    mysqli_num_rows(
-        $resultado_alerta
-    ) === 0
-) {
+    mysqli_stmt_bind_param(
+        $stmt_psicologo,
+        'i',
+        $id_psicologo
+    );
 
-    echo json_encode([
-        'success' => false,
-        'mensaje' => 'La alerta no existe'
-    ], JSON_UNESCAPED_UNICODE);
+    if (!mysqli_stmt_execute($stmt_psicologo)) {
+        mysqli_stmt_close($stmt_psicologo);
 
+        throw new RuntimeException(
+            'No se pudo validar el estado de la cuenta.'
+        );
+    }
+
+    $resultado_psicologo =
+        mysqli_stmt_get_result($stmt_psicologo);
+
+    $fila_psicologo = $resultado_psicologo !== false
+        ? mysqli_fetch_assoc($resultado_psicologo)
+        : false;
+
+    $psicologo_activo = is_array($fila_psicologo);
+
+    if ($resultado_psicologo instanceof mysqli_result) {
+        mysqli_free_result($resultado_psicologo);
+    }
+
+    mysqli_stmt_close($stmt_psicologo);
+
+    if (!$psicologo_activo) {
+        mysqli_rollback($conexion);
+        $transaccion_iniciada = false;
+
+        mysqli_close($conexion);
+        $conexion = null;
+
+        responder_json(403, [
+            'success' => false,
+            'mensaje' => 'No autorizado.'
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 7. Consultar y bloquear la alerta
+    |--------------------------------------------------------------------------
+    */
+
+    $sql_alerta = "
+        SELECT id_alerta, estado
+        FROM alerta
+        WHERE id_alerta = ?
+        LIMIT 1
+        FOR UPDATE
+    ";
+
+    $stmt_alerta = mysqli_prepare(
+        $conexion,
+        $sql_alerta
+    );
+
+    if (!$stmt_alerta) {
+        throw new RuntimeException(
+            'No se pudo preparar la consulta de la alerta.'
+        );
+    }
+
+    mysqli_stmt_bind_param(
+        $stmt_alerta,
+        'i',
+        $id_alerta
+    );
+
+    if (!mysqli_stmt_execute($stmt_alerta)) {
+        mysqli_stmt_close($stmt_alerta);
+
+        throw new RuntimeException(
+            'No se pudo consultar la alerta.'
+        );
+    }
+
+    $resultado_alerta =
+        mysqli_stmt_get_result($stmt_alerta);
+
+    if ($resultado_alerta === false) {
+        mysqli_stmt_close($stmt_alerta);
+
+        throw new RuntimeException(
+            'No se pudo obtener el resultado de la alerta.'
+        );
+    }
+
+    $fila_alerta = mysqli_fetch_assoc($resultado_alerta);
+
+    mysqli_free_result($resultado_alerta);
     mysqli_stmt_close($stmt_alerta);
-    mysqli_close($conexion);
 
-    exit;
-}
+    if (!$fila_alerta) {
+        mysqli_rollback($conexion);
+        $transaccion_iniciada = false;
 
+        mysqli_close($conexion);
+        $conexion = null;
 
-$fila_alerta =
-    mysqli_fetch_assoc(
-        $resultado_alerta
+        responder_json(404, [
+            'success' => false,
+            'mensaje' => 'La alerta no existe.'
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 8. Impedir cambios en alertas cerradas
+    |--------------------------------------------------------------------------
+    */
+
+    $estado_actual = trim(
+        (string) $fila_alerta['estado']
     );
 
+    $estados_permitidos = [
+        'Pendiente',
+        'En seguimiento'
+    ];
 
-mysqli_stmt_close($stmt_alerta);
+    if (!in_array($estado_actual, $estados_permitidos, true)) {
+        mysqli_rollback($conexion);
+        $transaccion_iniciada = false;
 
+        mysqli_close($conexion);
+        $conexion = null;
 
-/*
-|--------------------------------------------------------------------------
-| Registrar seguimiento
-|--------------------------------------------------------------------------
-*/
+        responder_json(409, [
+            'success' => false,
+            'mensaje' =>
+                'Esta alerta está cerrada o no admite nuevos seguimientos.'
+        ]);
+    }
 
-$estado_seguimiento = 'En seguimiento';
+    /*
+    |--------------------------------------------------------------------------
+    | 9. Registrar el seguimiento
+    |--------------------------------------------------------------------------
+    */
 
+    $estado_seguimiento = 'En seguimiento';
+    $estado_alerta = 'En seguimiento';
 
-$sql_insertar = "
-    INSERT INTO seguimiento
-    (
-        id_alerta,
-        id_psicologo,
-        observacion,
-        estado
-    )
-    VALUES (?, ?, ?, ?)
-";
+    $sql_insertar = "
+        INSERT INTO seguimiento (
+            id_alerta,
+            id_psicologo,
+            observacion,
+            estado
+        )
+        VALUES (?, ?, ?, ?)
+    ";
 
+    $stmt_insertar = mysqli_prepare(
+        $conexion,
+        $sql_insertar
+    );
 
-$stmt_insertar = mysqli_prepare(
-    $conexion,
-    $sql_insertar
-);
+    if (!$stmt_insertar) {
+        throw new RuntimeException(
+            'No se pudo preparar la inserción del seguimiento.'
+        );
+    }
 
+    mysqli_stmt_bind_param(
+        $stmt_insertar,
+        'iiss',
+        $id_alerta,
+        $id_psicologo,
+        $observacion,
+        $estado_seguimiento
+    );
 
-if (!$stmt_insertar) {
+    if (!mysqli_stmt_execute($stmt_insertar)) {
+        mysqli_stmt_close($stmt_insertar);
 
-    echo json_encode([
-        'success' => false,
-        'mensaje' => 'No se pudo preparar el seguimiento',
-        'error' => mysqli_error($conexion)
-    ], JSON_UNESCAPED_UNICODE);
+        throw new RuntimeException(
+            'No se pudo insertar el seguimiento.'
+        );
+    }
 
-    mysqli_close($conexion);
-
-    exit;
-}
-
-
-mysqli_stmt_bind_param(
-    $stmt_insertar,
-    "iiss",
-    $id_alerta,
-    $id_psicologo,
-    $observacion,
-    $estado_seguimiento
-);
-
-
-if (
-    !mysqli_stmt_execute(
-        $stmt_insertar
-    )
-) {
-
-    echo json_encode([
-        'success' => false,
-        'mensaje' => 'No se pudo registrar el seguimiento',
-        'error' => mysqli_stmt_error($stmt_insertar)
-    ], JSON_UNESCAPED_UNICODE);
+    $id_seguimiento = mysqli_insert_id($conexion);
 
     mysqli_stmt_close($stmt_insertar);
-    mysqli_close($conexion);
 
-    exit;
-}
+    /*
+    |--------------------------------------------------------------------------
+    | 10. Actualizar el estado de la alerta
+    |--------------------------------------------------------------------------
+    */
 
+    $sql_actualizar = "
+        UPDATE alerta
+        SET estado = ?
+        WHERE id_alerta = ?
+    ";
 
-$id_seguimiento =
-    mysqli_insert_id($conexion);
+    $stmt_actualizar = mysqli_prepare(
+        $conexion,
+        $sql_actualizar
+    );
 
+    if (!$stmt_actualizar) {
+        throw new RuntimeException(
+            'No se pudo preparar la actualización de la alerta.'
+        );
+    }
 
-mysqli_stmt_close($stmt_insertar);
+    mysqli_stmt_bind_param(
+        $stmt_actualizar,
+        'si',
+        $estado_alerta,
+        $id_alerta
+    );
 
+    if (!mysqli_stmt_execute($stmt_actualizar)) {
+        mysqli_stmt_close($stmt_actualizar);
 
-/*
-|--------------------------------------------------------------------------
-| Cambiar estado de la alerta
-|--------------------------------------------------------------------------
-*/
-
-$estado_alerta = 'En seguimiento';
-
-
-$sql_actualizar = "
-    UPDATE alerta
-
-    SET estado = ?
-
-    WHERE id_alerta = ?
-";
-
-
-$stmt_actualizar = mysqli_prepare(
-    $conexion,
-    $sql_actualizar
-);
-
-
-if (!$stmt_actualizar) {
-
-    echo json_encode([
-        'success' => false,
-        'mensaje' => 'El seguimiento fue creado, pero no se pudo actualizar la alerta'
-    ], JSON_UNESCAPED_UNICODE);
-
-    mysqli_close($conexion);
-
-    exit;
-}
-
-
-mysqli_stmt_bind_param(
-    $stmt_actualizar,
-    "si",
-    $estado_alerta,
-    $id_alerta
-);
-
-
-if (
-    !mysqli_stmt_execute(
-        $stmt_actualizar
-    )
-) {
-
-    echo json_encode([
-        'success' => false,
-        'mensaje' => 'El seguimiento fue creado, pero no se pudo actualizar el estado de la alerta'
-    ], JSON_UNESCAPED_UNICODE);
+        throw new RuntimeException(
+            'No se pudo actualizar el estado de la alerta.'
+        );
+    }
 
     mysqli_stmt_close($stmt_actualizar);
+
+    /*
+    |--------------------------------------------------------------------------
+    | 11. Confirmar ambas operaciones
+    |--------------------------------------------------------------------------
+    */
+
+    if (!mysqli_commit($conexion)) {
+        throw new RuntimeException(
+            'No se pudo confirmar la transacción.'
+        );
+    }
+
+    $transaccion_iniciada = false;
+
     mysqli_close($conexion);
+    $conexion = null;
 
-    exit;
+    responder_json(200, [
+        'success' => true,
+        'mensaje' => 'Seguimiento registrado correctamente.',
+        'id_seguimiento' => (int) $id_seguimiento,
+        'id_alerta' => (int) $id_alerta,
+        'estado_alerta' => $estado_alerta,
+        'estado_seguimiento' => $estado_seguimiento
+    ]);
+
+} catch (Throwable $e) {
+    if ($conexion instanceof mysqli) {
+        if ($transaccion_iniciada) {
+            mysqli_rollback($conexion);
+        }
+
+        mysqli_close($conexion);
+    }
+
+    error_log(
+        'SafeMind registrar_seguimiento.php: ' .
+        $e->getMessage()
+    );
+
+    responder_json(500, [
+        'success' => false,
+        'mensaje' =>
+            'No se pudo registrar el seguimiento en este momento.'
+    ]);
 }
-
-
-mysqli_stmt_close($stmt_actualizar);
-
-mysqli_close($conexion);
-
-
-/*
-|--------------------------------------------------------------------------
-| Respuesta
-|--------------------------------------------------------------------------
-*/
-
-echo json_encode([
-
-    'success' => true,
-
-    'mensaje' =>
-        'Seguimiento registrado correctamente',
-
-    'id_seguimiento' =>
-        $id_seguimiento,
-
-    'id_alerta' =>
-        $id_alerta,
-
-    'estado_alerta' =>
-        $estado_alerta,
-
-    'estado_seguimiento' =>
-        $estado_seguimiento
-
-], JSON_UNESCAPED_UNICODE);
-
 ?>
