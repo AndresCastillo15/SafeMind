@@ -63,7 +63,8 @@ $sql = "
         est.nombre,
         est.apellido,
         est.curso,
-        est.correo
+        est.correo,
+        est.telefono
 
     FROM alerta a
 
@@ -239,7 +240,10 @@ echo json_encode([
             $fila['curso'],
 
         'correo' =>
-            $fila['correo']
+            $fila['correo'],
+
+        'telefono' =>
+            $fila['telefono']
 
     ],
 
