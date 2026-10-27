@@ -41,16 +41,8 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
 
     <title>Estudiantes - SafeMind</title>
 
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-        crossorigin
-    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,560;9..144,650&family=Karla:wght@400;500;600;700&display=swap"
@@ -79,10 +71,8 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
             --sage: #4F7F62;
             --sage-soft: #DCE9DF;
 
-            --gold: #C8922F;
             --gold-soft: #F5E7C8;
 
-            --orange: #C96D34;
             --orange-soft: #F5E1D2;
 
             --red: #B94A43;
@@ -340,9 +330,7 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
         .busqueda input:focus {
             outline: none;
             border-color: var(--deep);
-            box-shadow:
-                0 0 0 3px
-                rgba(23, 69, 90, 0.10);
+            box-shadow: 0 0 0 3px rgba(23, 69, 90, 0.10);
         }
 
         /* =========================================================
@@ -503,10 +491,7 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
         .cargando,
         .vacio,
         .error {
-            min-height: 180px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 70px 0;
             text-align: center;
             color: var(--ink-faint);
             font-size: 14px;
@@ -562,55 +547,19 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
     <aside class="sidebar">
 
         <div class="logo">
-
-            <div class="logo-mark">
-                SM
-            </div>
-
-            <span>
-                SafeMind
-            </span>
-
+            <div class="logo-mark">SM</div>
+            <span>SafeMind</span>
         </div>
 
         <div class="perfil">
 
             <div class="avatar">
-
-                <?php
-
-                echo htmlspecialchars(
-                    strtoupper(
-                        substr(
-                            $nombre,
-                            0,
-                            2
-                        )
-                    )
-                );
-
-                ?>
-
+                <?php echo htmlspecialchars(mb_strtoupper(mb_substr($nombre, 0, 2))); ?>
             </div>
 
             <div class="perfil-info">
-
-                <strong>
-
-                    <?php
-
-                    echo htmlspecialchars(
-                        $nombre
-                    );
-
-                    ?>
-
-                </strong>
-
-                <span>
-                    Psicólogo / Orientador
-                </span>
-
+                <strong><?php echo htmlspecialchars($nombre); ?></strong>
+                <span>Psicólogo / Orientador</span>
             </div>
 
         </div>
@@ -625,10 +574,7 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
                 🔔 &nbsp; Alertas
             </a>
 
-            <a
-                href="estudiantes_psicologo.php"
-                class="activo"
-            >
+            <a href="estudiantes_psicologo.php" class="activo">
                 👥 &nbsp; Estudiantes
             </a>
 
@@ -644,25 +590,18 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
 
         <div class="orientacion">
 
-            <strong>
-                SafeMind
-            </strong>
+            <strong>SafeMind</strong>
 
             <p>
                 Consulta general de estudiantes
                 y seguimiento profesional.
             </p>
 
-            <span>
-                Panel protegido
-            </span>
+            <span>Panel protegido</span>
 
         </div>
 
-        <a
-            href="../logout.php"
-            class="cerrar"
-        >
+        <a href="../logout.php" class="cerrar">
             ↪ &nbsp; Cerrar sesión
         </a>
 
@@ -677,27 +616,13 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
         <div class="topbar">
 
             <div class="titulo">
-
-                <h1>
-                    Estudiantes
-                </h1>
-
-                <p>
-                    Consulta y seguimiento de estudiantes registrados
-                </p>
-
+                <h1>Estudiantes</h1>
+                <p>Consulta y seguimiento de estudiantes registrados</p>
             </div>
 
             <div class="fecha">
-
-                <?php
-                echo date('d/m/Y');
-                ?>
-
-                <span>
-                    Información de SafeMind
-                </span>
-
+                <?php echo date('d/m/Y'); ?>
+                <span>Información de SafeMind</span>
             </div>
 
         </div>
@@ -710,28 +635,21 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
 
             <div class="panel-header">
 
-                <h2>
-                    Estudiantes registrados
-                </h2>
+                <h2>Estudiantes registrados</h2>
 
-                <span
-                    id="total-estudiantes"
-                    class="total"
-                >
+                <span id="total-estudiantes" class="total">
                     Cargando...
                 </span>
 
             </div>
 
             <div class="busqueda">
-
                 <input
                     type="text"
                     id="buscador"
                     placeholder="Buscar por nombre, apellido o curso..."
                     autocomplete="off"
                 >
-
             </div>
 
             <div class="tabla-contenedor">
@@ -739,54 +657,23 @@ $nombre = $_SESSION['nombre'] ?? 'Psicólogo';
                 <table>
 
                     <thead>
-
                         <tr>
-
-                            <th>
-                                Estudiante
-                            </th>
-
-                            <th>
-                                Curso
-                            </th>
-
-                            <th>
-                                Evaluaciones
-                            </th>
-
-                            <th>
-                                Última emoción
-                            </th>
-
-                            <th>
-                                Riesgo
-                            </th>
-
-                            <th>
-                                Estado
-                            </th>
-
-                            <th>
-                                Acción
-                            </th>
-
+                            <th>Estudiante</th>
+                            <th>Curso</th>
+                            <th>Evaluaciones</th>
+                            <th>Última emoción</th>
+                            <th>Riesgo</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
                         </tr>
-
                     </thead>
 
                     <tbody id="tabla-estudiantes">
-
                         <tr>
-
-                            <td
-                                colspan="7"
-                                class="cargando"
-                            >
+                            <td colspan="7" class="cargando">
                                 Cargando estudiantes...
                             </td>
-
                         </tr>
-
                     </tbody>
 
                 </table>
@@ -817,22 +704,9 @@ const API_ESTUDIANTES =
 |--------------------------------------------------------------------------
 */
 
-const tabla =
-    document.getElementById(
-        'tabla-estudiantes'
-    );
-
-
-const total =
-    document.getElementById(
-        'total-estudiantes'
-    );
-
-
-const buscador =
-    document.getElementById(
-        'buscador'
-    );
+const tabla = document.getElementById('tabla-estudiantes');
+const total = document.getElementById('total-estudiantes');
+const buscador = document.getElementById('buscador');
 
 
 /*
@@ -851,83 +725,69 @@ let estudiantes = [];
 */
 
 function escapar(texto) {
-
-    const div =
-        document.createElement('div');
-
-    div.textContent =
-        texto ?? '';
-
+    const div = document.createElement('div');
+    div.textContent = texto ?? '';
     return div.innerHTML;
-
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| CLASE DEL RIESGO
+| NOMBRE COMPLETO
 |--------------------------------------------------------------------------
 */
 
-function claseRiesgo(riesgo) {
-
-    if (!riesgo) {
-        return 'sin';
-    }
-
-    const valor =
-        String(riesgo).toLowerCase();
-
-    if (valor === 'bien') {
-        return 'bien';
-    }
-
-    if (valor === 'alerta') {
-        return 'alerta';
-    }
-
-    if (valor === 'riesgo') {
-        return 'riesgo';
-    }
-
-    if (valor === 'crisis') {
-        return 'crisis';
-    }
-
-    return 'sin';
-
+function nombreCompleto(estudiante) {
+    return [estudiante.nombre, estudiante.apellido]
+        .filter(Boolean)
+        .join(' ');
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| CLASE ESTADO
+| CLASE DE BADGE (riesgo y estado)
 |--------------------------------------------------------------------------
 */
 
-function claseEstado(estado) {
+const CLASES = {
+    bien: 'bien',
+    alerta: 'alerta',
+    riesgo: 'riesgo',
+    crisis: 'crisis',
+    cerrada: 'cerrada',
+    'en seguimiento': 'seguimiento',
+    pendiente: 'pendiente'
+};
 
-    if (!estado) {
-        return 'sin';
+function clase(valor) {
+    return CLASES[String(valor ?? '').trim().toLowerCase()] || 'sin';
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| ACCIÓN DEL CASO
+|--------------------------------------------------------------------------
+| Si el caso está cerrado, solo se permite consultar el historial.
+| El servidor debe impedir las modificaciones.
+*/
+
+function accionCaso(estudiante) {
+    const idAlerta = Number(estudiante.id_alerta);
+
+    if (!(idAlerta > 0)) {
+        return '<span class="sin-caso">Sin caso</span>';
     }
 
-    const valor =
-        String(estado).toLowerCase();
+    const cerrado =
+        String(estudiante.estado_alerta ?? '').trim().toLowerCase() === 'cerrada';
 
-    if (valor === 'cerrada') {
-        return 'cerrada';
-    }
+    const enlace = `detalle_alerta.php?id_alerta=${idAlerta}`;
+    const extra = cerrado ? ' ver-historial' : '';
+    const texto = cerrado ? 'Ver historial' : 'Ver caso';
 
-    if (valor === 'en seguimiento') {
-        return 'seguimiento';
-    }
-
-    if (valor === 'pendiente') {
-        return 'pendiente';
-    }
-
-    return 'sin';
-
+    return `<a href="${enlace}" class="ver-caso${extra}">${texto} →</a>`;
 }
 
 
@@ -939,258 +799,67 @@ function claseEstado(estado) {
 
 function renderizarEstudiantes(lista) {
 
-    if (!Array.isArray(lista)) {
-        lista = [];
+    if (!Array.isArray(lista) || lista.length === 0) {
+        tabla.innerHTML = `
+            <tr>
+                <td colspan="7" class="vacio">
+                    No se encontraron estudiantes.
+                </td>
+            </tr>
+        `;
+        return;
     }
 
-    if (lista.length === 0) {
+    tabla.innerHTML = lista.map(estudiante => {
 
-        tabla.innerHTML = `
+        const riesgo = estudiante.ultimo_riesgo || 'Sin evaluación';
+        const estado = estudiante.estado_alerta || 'Sin alerta';
+        const emocion = estudiante.ultima_emocion || 'Sin registro';
 
+        return `
             <tr>
-
-                <td
-                    colspan="7"
-                    class="vacio"
-                >
-
-                    No se encontraron estudiantes.
-
+                <td>
+                    <span class="estudiante">
+                        ${escapar(nombreCompleto(estudiante))}
+                    </span>
                 </td>
 
+                <td>
+                    <span class="curso">
+                        ${escapar(estudiante.curso || 'Sin curso')}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="evaluaciones">
+                        ${Number(estudiante.total_evaluaciones || 0)}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="emocion">
+                        ${escapar(emocion)}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="badge ${clase(riesgo)}">
+                        ${escapar(riesgo)}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="badge ${clase(estado)}">
+                        ${escapar(estado)}
+                    </span>
+                </td>
+
+                <td>
+                    ${accionCaso(estudiante)}
+                </td>
             </tr>
-
         `;
-
-        return;
-
-    }
-
-    tabla.innerHTML =
-        lista.map(
-            estudiante => {
-
-                const nombre =
-                    `${estudiante.nombre ?? ''}
-                    ${estudiante.apellido ?? ''}`
-                    .trim();
-
-
-                const riesgo =
-                    estudiante.ultimo_riesgo ||
-                    'Sin evaluación';
-
-
-                const estado =
-                    estudiante.estado_alerta ||
-                    'Sin alerta';
-
-
-                const emocion =
-                    estudiante.ultima_emocion ||
-                    'Sin registro';
-
-
-                const idAlerta =
-                    estudiante.id_alerta;
-
-
-                /*
-                ------------------------------------------------------
-                Determinar si el caso está cerrado.
-                ------------------------------------------------------
-                */
-
-                const estadoNormalizado =
-                    String(estado)
-                        .trim()
-                        .toLowerCase();
-
-
-                const casoCerrado =
-                    estadoNormalizado === 'cerrada';
-
-
-                let accion = '';
-
-
-                /*
-                ------------------------------------------------------
-                Construir la acción correspondiente.
-                ------------------------------------------------------
-                */
-
-                if (
-                    idAlerta !== null &&
-                    idAlerta !== undefined &&
-                    Number(idAlerta) > 0
-                ) {
-
-                    const enlaceCaso =
-                        `detalle_alerta.php?id_alerta=${Number(idAlerta)}`;
-
-
-                    if (casoCerrado) {
-
-                        /*
-                        El caso está cerrado.
-                        Se permite consultar el historial.
-                        El servidor debe impedir las modificaciones.
-                        */
-
-                        accion = `
-
-                            <a
-                                href="${enlaceCaso}"
-                                class="ver-caso ver-historial"
-                                aria-label="Consultar historial del caso cerrado"
-                            >
-
-                                Ver historial →
-
-                            </a>
-
-                        `;
-
-                    } else {
-
-                        /*
-                        El caso todavía no está cerrado.
-                        Se conserva la acción habitual.
-                        */
-
-                        accion = `
-
-                            <a
-                                href="${enlaceCaso}"
-                                class="ver-caso"
-                            >
-
-                                Ver caso →
-
-                            </a>
-
-                        `;
-
-                    }
-
-                } else {
-
-                    /*
-                    No existe una alerta asociada que consultar.
-                    */
-
-                    accion = `
-
-                        <span class="sin-caso">
-
-                            Sin caso
-
-                        </span>
-
-                    `;
-
-                }
-
-
-                /*
-                ------------------------------------------------------
-                Construir la fila del estudiante.
-                ------------------------------------------------------
-                */
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            <span class="estudiante">
-
-                                ${escapar(nombre)}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <span class="curso">
-
-                                ${escapar(
-                                    estudiante.curso ||
-                                    'Sin curso'
-                                )}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <span class="evaluaciones">
-
-                                ${Number(
-                                    estudiante.total_evaluaciones || 0
-                                )}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <span class="emocion">
-
-                                ${escapar(emocion)}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="badge ${claseRiesgo(riesgo)}"
-                            >
-
-                                ${escapar(riesgo)}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="badge ${claseEstado(estado)}"
-                            >
-
-                                ${escapar(estado)}
-
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            ${accion}
-
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join('');
-
+    }).join('');
 }
 
 
@@ -1204,81 +873,44 @@ async function cargarEstudiantes() {
 
     try {
 
-        const respuesta =
-            await fetch(
-                API_ESTUDIANTES,
-                {
-                    method: 'GET',
-                    cache: 'no-store',
-                    credentials: 'same-origin'
-                }
-            );
-
+        const respuesta = await fetch(API_ESTUDIANTES, {
+            method: 'GET',
+            cache: 'no-store',
+            credentials: 'same-origin'
+        });
 
         if (!respuesta.ok) {
-
-            throw new Error(
-                'No se pudo consultar la API de estudiantes.'
-            );
-
+            throw new Error('No se pudo consultar la API de estudiantes.');
         }
 
-
-        const datos =
-            await respuesta.json();
-
+        const datos = await respuesta.json();
 
         if (!datos.success) {
-
             throw new Error(
-                datos.mensaje ||
-                'No se pudieron cargar los estudiantes.'
+                datos.mensaje || 'No se pudieron cargar los estudiantes.'
             );
-
         }
 
+        estudiantes = Array.isArray(datos.estudiantes)
+            ? datos.estudiantes
+            : [];
 
-        estudiantes =
-            Array.isArray(datos.estudiantes)
-                ? datos.estudiantes
-                : [];
-
-
-        total.textContent =
-            `${estudiantes.length} estudiante(s)`;
-
+        total.textContent = `${estudiantes.length} estudiante(s)`;
 
         renderizarEstudiantes(estudiantes);
 
-
     } catch (error) {
 
-        console.error(
-            'Error al cargar estudiantes:',
-            error
-        );
+        console.error('Error al cargar estudiantes:', error);
 
-
-        total.textContent =
-            'Error';
-
+        total.textContent = 'Error';
 
         tabla.innerHTML = `
-
             <tr>
-
-                <td
-                    colspan="7"
-                    class="error"
-                >
-
-                    No se pudieron cargar
-                    los estudiantes.
-
+                <td colspan="7" class="error">
+                    No se pudieron cargar los estudiantes.
                 </td>
-
             </tr>
-
         `;
 
     }
@@ -1292,54 +924,27 @@ async function cargarEstudiantes() {
 |--------------------------------------------------------------------------
 */
 
-buscador.addEventListener(
-    'input',
-    function () {
+buscador.addEventListener('input', function () {
 
-        const texto =
-            this.value
-                .toLowerCase()
-                .trim();
+    const texto = this.value.toLowerCase().trim();
 
-
-        if (texto === '') {
-
-            renderizarEstudiantes(estudiantes);
-
-            return;
-
-        }
-
-
-        const filtrados =
-            estudiantes.filter(
-                estudiante => {
-
-                    const nombre =
-                        `${estudiante.nombre ?? ''}
-                        ${estudiante.apellido ?? ''}`
-                        .toLowerCase();
-
-
-                    const curso =
-                        String(
-                            estudiante.curso ?? ''
-                        ).toLowerCase();
-
-
-                    return (
-                        nombre.includes(texto) ||
-                        curso.includes(texto)
-                    );
-
-                }
-            );
-
-
-        renderizarEstudiantes(filtrados);
-
+    if (texto === '') {
+        renderizarEstudiantes(estudiantes);
+        return;
     }
-);
+
+    const filtrados = estudiantes.filter(estudiante => {
+
+        const nombre = nombreCompleto(estudiante).toLowerCase();
+        const curso = String(estudiante.curso ?? '').toLowerCase();
+
+        return nombre.includes(texto) || curso.includes(texto);
+
+    });
+
+    renderizarEstudiantes(filtrados);
+
+});
 
 
 /*
@@ -1353,5 +958,4 @@ cargarEstudiantes();
 </script>
 
 </body>
-
 </html>
