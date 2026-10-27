@@ -44,6 +44,19 @@ if (
 ) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+/*
+|--------------------------------------------------------------------------
+| PROTECCIÓN CSRF
+|--------------------------------------------------------------------------
+*/
+
+if (
+    !isset($_SESSION['csrf_token']) ||
+    !is_string($_SESSION['csrf_token']) ||
+    !preg_match('/\A[a-f0-9]{64}\z/', $_SESSION['csrf_token'])
+) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -120,6 +133,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
             display: flex;
         }
 
+        /* SIDEBAR */
         /* SIDEBAR */
 
         .sidebar {
@@ -318,6 +332,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
         /* INFORMACIÓN */
+        /* INFORMACIÓN */
 
         .grid-info {
             display: grid;
@@ -383,6 +398,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
         /* BLOQUES */
+        /* BLOQUES */
 
         .bloque {
             background: #fff;
@@ -400,6 +416,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
         /* RESUMEN */
+        /* RESUMEN */
 
         .resumen {
             color: var(--ink-soft);
@@ -410,6 +427,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
             border-radius: 10px;
         }
 
+        /* RECURSO RECOMENDADO */
         /* RECURSO RECOMENDADO */
 
         .recurso-contenedor {
@@ -480,6 +498,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
         /* CONVERSACIÓN */
+        /* CONVERSACIÓN */
 
         .conversacion {
             display: flex;
@@ -526,6 +545,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
         /* SEGUIMIENTO */
+        /* SEGUIMIENTO */
 
         .texto-ayuda {
             color: var(--ink-soft);
@@ -555,6 +575,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         .campo-observacion:focus {
             outline: none;
             border-color: var(--deep);
+            box-shadow: 0 0 0 3px rgba(23, 69, 90, 0.10);
             box-shadow: 0 0 0 3px rgba(23, 69, 90, 0.10);
         }
 
@@ -629,6 +650,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
         /* HISTORIAL */
+        /* HISTORIAL */
 
         .historial-seguimientos {
             display: flex;
@@ -698,6 +720,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         }
 
         /* CARGA / ERROR */
+        /* CARGA / ERROR */
 
         .cargando {
             min-height: 300px;
@@ -718,6 +741,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
             font-size: 14px;
         }
 
+        /* RESPONSIVE */
         /* RESPONSIVE */
 
         @media (max-width: 1050px) {
@@ -773,6 +797,9 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
             <div class="logo-mark">SM</div>
             <span>SafeMind</span>
         </div>
+            <div class="logo-mark">SM</div>
+            <span>SafeMind</span>
+        </div>
 
         <div class="perfil">
 
@@ -795,6 +822,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
                 </strong>
 
                 <span>Psicólogo / Orientador</span>
+                <span>Psicólogo / Orientador</span>
 
             </div>
 
@@ -806,6 +834,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
                 🏠 &nbsp; Inicio
             </a>
 
+            <a href="dashboard_psicologo.php#alertas">
             <a href="dashboard_psicologo.php#alertas">
                 🔔 &nbsp; Alertas
             </a>
@@ -827,6 +856,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
         <div class="orientacion">
 
             <strong>SafeMind</strong>
+            <strong>SafeMind</strong>
 
             <p>
                 Información privada destinada al
@@ -834,9 +864,11 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
             </p>
 
             <span>Panel protegido</span>
+            <span>Panel protegido</span>
 
         </div>
 
+        <a href="../logout.php" class="cerrar">
         <a href="../logout.php" class="cerrar">
             ↪ &nbsp; Cerrar sesión
         </a>
@@ -872,8 +904,7 @@ $nombre_psicologo = $_SESSION['nombre'] ?? 'Psicólogo';
 |--------------------------------------------------------------------------
 */
 
-const ID_ALERTA =
-    <?php echo $id_alerta; ?>;
+const ID_ALERTA = <?php echo $id_alerta; ?>;
 
 /*
 |--------------------------------------------------------------------------
@@ -893,7 +924,7 @@ const CSRF_TOKEN = <?php
 
 /*
 |--------------------------------------------------------------------------
-| APIs
+| APIS
 |--------------------------------------------------------------------------
 */
 
@@ -920,6 +951,7 @@ const API_RECURSOS =
 
 const contenido =
     document.getElementById('contenido-caso');
+    document.getElementById('contenido-caso');
 
 /*
 |--------------------------------------------------------------------------
@@ -930,7 +962,9 @@ const contenido =
 function escapar(texto) {
 
     const div = document.createElement('div');
+    const div = document.createElement('div');
 
+    div.textContent = texto ?? '';
     div.textContent = texto ?? '';
 
     return div.innerHTML;
@@ -950,11 +984,13 @@ function formatearFecha(fecha) {
     }
 
     const partes = String(fecha).split(' ');
+    const partes = String(fecha).split(' ');
 
     if (partes.length < 2) {
         return String(fecha);
     }
 
+    const fechaPartes = partes[0].split('-');
     const fechaPartes = partes[0].split('-');
 
     if (fechaPartes.length !== 3) {
@@ -983,11 +1019,22 @@ async function cargarCaso() {
                 credentials: 'same-origin'
             }
         );
+        const respuesta = await fetch(
+            API_CASO,
+            {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'same-origin'
+            }
+        );
 
         if (!respuesta.ok) {
             throw new Error('No se pudo consultar el caso.');
         }
+            throw new Error('No se pudo consultar el caso.');
+        }
 
+        const datos = await respuesta.json();
         const datos = await respuesta.json();
 
         if (!datos.success) {
@@ -1002,7 +1049,15 @@ async function cargarCaso() {
         const evaluacion = datos.evaluacion || {};
         const riesgo = datos.riesgo || {};
         const analisis = datos.analisis || {};
+        const alerta = datos.alerta || {};
+        const estudiante = datos.estudiante || {};
+        const evaluacion = datos.evaluacion || {};
+        const riesgo = datos.riesgo || {};
+        const analisis = datos.analisis || {};
 
+        const mensajes = Array.isArray(datos.mensajes)
+            ? datos.mensajes
+            : [];
         const mensajes = Array.isArray(datos.mensajes)
             ? datos.mensajes
             : [];
@@ -1026,7 +1081,12 @@ async function cargarCaso() {
         } else {
 
             conversacionHTML = mensajes.map(mensaje => {
+            conversacionHTML = mensajes.map(mensaje => {
 
+                const clase =
+                    mensaje.remitente === 'estudiante'
+                        ? 'estudiante'
+                        : 'ia';
                 const clase =
                     mensaje.remitente === 'estudiante'
                         ? 'estudiante'
@@ -1036,14 +1096,26 @@ async function cargarCaso() {
                     mensaje.remitente === 'estudiante'
                         ? 'Estudiante'
                         : 'SafeMind';
+                const nombreRemitente =
+                    mensaje.remitente === 'estudiante'
+                        ? 'Estudiante'
+                        : 'SafeMind';
 
+                return `
+                    <div class="mensaje ${clase}">
                 return `
                     <div class="mensaje ${clase}">
 
                         <div class="mensaje-remitente">
                             ${escapar(nombreRemitente)}
                         </div>
+                        <div class="mensaje-remitente">
+                            ${escapar(nombreRemitente)}
+                        </div>
 
+                        <div>
+                            ${escapar(mensaje.contenido)}
+                        </div>
                         <div>
                             ${escapar(mensaje.contenido)}
                         </div>
@@ -1054,7 +1126,10 @@ async function cargarCaso() {
 
                     </div>
                 `;
+                    </div>
+                `;
 
+            }).join('');
             }).join('');
 
         }
@@ -1067,11 +1142,16 @@ async function cargarCaso() {
 
         const alertaCerrada =
             String(alerta.estado).toLowerCase() === 'cerrada';
+            String(alerta.estado).toLowerCase() === 'cerrada';
 
         const claseEstado = alertaCerrada
             ? 'estado-alerta cerrada'
             : 'estado-alerta';
+        const claseEstado = alertaCerrada
+            ? 'estado-alerta cerrada'
+            : 'estado-alerta';
 
+        const textoEstado = alerta.estado || 'Pendiente';
         const textoEstado = alerta.estado || 'Pendiente';
 
         /*
@@ -1087,11 +1167,15 @@ async function cargarCaso() {
                 <div>
 
                     <h1>Caso de seguimiento</h1>
+                    <h1>Caso de seguimiento</h1>
 
                     <p>
                         ${escapar(estudiante.nombre || '')}
                         ${escapar(estudiante.apellido || '')}
+                        ${escapar(estudiante.nombre || '')}
+                        ${escapar(estudiante.apellido || '')}
                         · Curso
+                        ${escapar(estudiante.curso || '')}
                         ${escapar(estudiante.curso || '')}
                     </p>
 
@@ -1102,6 +1186,7 @@ async function cargarCaso() {
                     id="estado-alerta"
                 >
                     ${escapar(textoEstado)}
+                    ${escapar(textoEstado)}
                 </div>
 
             </div>
@@ -1111,6 +1196,7 @@ async function cargarCaso() {
                 <div class="info-card">
 
                     <h3>Estudiante</h3>
+                    <h3>Estudiante</h3>
 
                     <div class="dato">
 
@@ -1119,8 +1205,9 @@ async function cargarCaso() {
                         <span>
                             ${escapar(estudiante.nombre || '')}
                             ${escapar(estudiante.apellido || '')}
+                            ${escapar(estudiante.nombre || '')}
+                            ${escapar(estudiante.apellido || '')}
                         </span>
-
                     </div>
 
                     <div class="dato">
@@ -1162,6 +1249,7 @@ async function cargarCaso() {
                 <div class="info-card">
 
                     <h3>Evaluación</h3>
+                    <h3>Evaluación</h3>
 
                     <div class="dato">
 
@@ -1172,7 +1260,6 @@ async function cargarCaso() {
                                 formatearFecha(evaluacion.fecha_inicio)
                             )}
                         </span>
-
                     </div>
 
                     <div class="dato">
@@ -1182,13 +1269,13 @@ async function cargarCaso() {
                         <span>
                             ${escapar(evaluacion.estado || 'Sin estado')}
                         </span>
-
                     </div>
 
                 </div>
 
                 <div class="info-card">
 
+                    <h3>Análisis</h3>
                     <h3>Análisis</h3>
 
                     <div class="dato">
@@ -1198,9 +1285,9 @@ async function cargarCaso() {
                         <span>
                             <span class="badge-riesgo">
                                 ${escapar(riesgo.nombre || 'Sin nivel')}
+                                ${escapar(riesgo.nombre || 'Sin nivel')}
                             </span>
                         </span>
-
                     </div>
 
                     <div class="dato">
@@ -1210,7 +1297,6 @@ async function cargarCaso() {
                         <span>
                             ${escapar(analisis.emocion || 'Sin emoción')}
                         </span>
-
                     </div>
 
                     <div class="dato">
@@ -1219,8 +1305,8 @@ async function cargarCaso() {
 
                         <span>
                             ${escapar(analisis.confianza ?? 0)}%
+                            ${escapar(analisis.confianza ?? 0)}%
                         </span>
-
                     </div>
 
                 </div>
@@ -1229,6 +1315,7 @@ async function cargarCaso() {
 
             <section class="bloque">
 
+                <h2>Resumen del análisis</h2>
                 <h2>Resumen del análisis</h2>
 
                 <div class="resumen">
@@ -1242,6 +1329,7 @@ async function cargarCaso() {
 
             <section class="bloque">
 
+                <h2>Recurso recomendado por SafeMind</h2>
                 <h2>Recurso recomendado por SafeMind</h2>
 
                 <div
@@ -1258,6 +1346,7 @@ async function cargarCaso() {
             <section class="bloque">
 
                 <h2>Conversación con SafeMind</h2>
+                <h2>Conversación con SafeMind</h2>
 
                 <div class="conversacion">
                     ${conversacionHTML}
@@ -1267,6 +1356,7 @@ async function cargarCaso() {
 
             <section class="bloque">
 
+                <h2>Seguimiento profesional</h2>
                 <h2>Seguimiento profesional</h2>
 
                 <p class="texto-ayuda">
@@ -1334,6 +1424,7 @@ async function cargarCaso() {
             <section class="bloque">
 
                 <h2>Historial de seguimientos</h2>
+                <h2>Historial de seguimientos</h2>
 
                 <div
                     id="historial-seguimientos"
@@ -1355,13 +1446,16 @@ async function cargarCaso() {
         */
 
         cargarRecursos(analisis.id);
+        cargarRecursos(analisis.id);
 
     } catch (error) {
 
         console.error('Error al cargar caso:', error);
+        console.error('Error al cargar caso:', error);
 
         contenido.innerHTML = `
             <div class="error">
+                No se pudo cargar la información del caso.
                 No se pudo cargar la información del caso.
             </div>
         `;
@@ -1380,6 +1474,9 @@ async function cargarCaso() {
 
 async function cargarRecursos(id_analisis) {
 
+    const contenedor = document.getElementById(
+        'recurso-recomendado'
+    );
     const contenedor = document.getElementById(
         'recurso-recomendado'
     );
@@ -1410,11 +1507,22 @@ async function cargarRecursos(id_analisis) {
                 credentials: 'same-origin'
             }
         );
+        const respuesta = await fetch(
+            `${API_RECURSOS}?id_analisis=${Number(id_analisis)}`,
+            {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'same-origin'
+            }
+        );
 
         if (!respuesta.ok) {
             throw new Error('No se pudo consultar el recurso.');
         }
+            throw new Error('No se pudo consultar el recurso.');
+        }
 
+        const datos = await respuesta.json();
         const datos = await respuesta.json();
 
         if (!datos.success) {
@@ -1424,6 +1532,9 @@ async function cargarRecursos(id_analisis) {
             );
         }
 
+        const recursos = Array.isArray(datos.recursos)
+            ? datos.recursos
+            : [];
         const recursos = Array.isArray(datos.recursos)
             ? datos.recursos
             : [];
@@ -1442,10 +1553,18 @@ async function cargarRecursos(id_analisis) {
         }
 
         contenedor.innerHTML = recursos.map(recurso => {
+        contenedor.innerHTML = recursos.map(recurso => {
 
             return `
                 <article class="recurso-card">
+            return `
+                <article class="recurso-card">
 
+                    <div class="recurso-icono">🌿</div>
+
+                    <div class="recurso-titulo">
+                        ${escapar(recurso.titulo || 'Recurso de apoyo')}
+                    </div>
                     <div class="recurso-icono">🌿</div>
 
                     <div class="recurso-titulo">
@@ -1458,18 +1577,31 @@ async function cargarRecursos(id_analisis) {
                             'Sin descripción disponible.'
                         )}
                     </div>
+                    <div class="recurso-descripcion">
+                        ${escapar(
+                            recurso.descripcion ||
+                            'Sin descripción disponible.'
+                        )}
+                    </div>
 
+                    <span class="recurso-tipo">
+                        ${escapar(recurso.tipo || 'Apoyo')}
+                    </span>
                     <span class="recurso-tipo">
                         ${escapar(recurso.tipo || 'Apoyo')}
                     </span>
 
                 </article>
             `;
+                </article>
+            `;
 
+        }).join('');
         }).join('');
 
     } catch (error) {
 
+        console.error('Error al cargar recurso:', error);
         console.error('Error al cargar recurso:', error);
 
         contenedor.innerHTML = `
@@ -1490,6 +1622,9 @@ async function cargarRecursos(id_analisis) {
 
 async function cargarSeguimientos() {
 
+    const contenedor = document.getElementById(
+        'historial-seguimientos'
+    );
     const contenedor = document.getElementById(
         'historial-seguimientos'
     );
@@ -1514,11 +1649,22 @@ async function cargarSeguimientos() {
                 credentials: 'same-origin'
             }
         );
+        const respuesta = await fetch(
+            `${API_HISTORIAL}?id_alerta=${ID_ALERTA}`,
+            {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'same-origin'
+            }
+        );
 
         if (!respuesta.ok) {
             throw new Error('No se pudo consultar el historial.');
         }
+            throw new Error('No se pudo consultar el historial.');
+        }
 
+        const datos = await respuesta.json();
         const datos = await respuesta.json();
 
         if (!datos.success) {
@@ -1528,6 +1674,9 @@ async function cargarSeguimientos() {
             );
         }
 
+        const seguimientos = Array.isArray(datos.seguimientos)
+            ? datos.seguimientos
+            : [];
         const seguimientos = Array.isArray(datos.seguimientos)
             ? datos.seguimientos
             : [];
@@ -1545,17 +1694,28 @@ async function cargarSeguimientos() {
         }
 
         contenedor.innerHTML = seguimientos.map(seguimiento => {
+        contenedor.innerHTML = seguimientos.map(seguimiento => {
 
+            const nombrePsicologo =
+                seguimiento.psicologo?.nombre || 'Psicólogo';
             const nombrePsicologo =
                 seguimiento.psicologo?.nombre || 'Psicólogo';
 
             const fecha = formatearFecha(seguimiento.fecha);
+            const fecha = formatearFecha(seguimiento.fecha);
 
+            const observacion =
+                seguimiento.observacion || 'Sin observación';
             const observacion =
                 seguimiento.observacion || 'Sin observación';
 
             const estado = seguimiento.estado || 'Sin estado';
+            const estado = seguimiento.estado || 'Sin estado';
 
+            const claseEstado =
+                String(estado).toLowerCase() === 'cerrado'
+                    ? 'seguimiento-estado cerrado'
+                    : 'seguimiento-estado';
             const claseEstado =
                 String(estado).toLowerCase() === 'cerrado'
                     ? 'seguimiento-estado cerrado'
@@ -1563,9 +1723,15 @@ async function cargarSeguimientos() {
 
             return `
                 <article class="seguimiento-item">
+            return `
+                <article class="seguimiento-item">
 
                     <div class="seguimiento-cabecera">
+                    <div class="seguimiento-cabecera">
 
+                        <div class="seguimiento-psicologo">
+                            ${escapar(nombrePsicologo)}
+                        </div>
                         <div class="seguimiento-psicologo">
                             ${escapar(nombrePsicologo)}
                         </div>
@@ -1573,9 +1739,16 @@ async function cargarSeguimientos() {
                         <div class="seguimiento-fecha">
                             ${escapar(fecha)}
                         </div>
+                        <div class="seguimiento-fecha">
+                            ${escapar(fecha)}
+                        </div>
 
                     </div>
+                    </div>
 
+                    <div class="seguimiento-observacion">
+                        ${escapar(observacion)}
+                    </div>
                     <div class="seguimiento-observacion">
                         ${escapar(observacion)}
                     </div>
@@ -1583,18 +1756,26 @@ async function cargarSeguimientos() {
                     <span class="${claseEstado}">
                         ${escapar(estado)}
                     </span>
+                    <span class="${claseEstado}">
+                        ${escapar(estado)}
+                    </span>
 
                 </article>
             `;
+                </article>
+            `;
 
+        }).join('');
         }).join('');
 
     } catch (error) {
 
         console.error('Error al cargar seguimientos:', error);
+        console.error('Error al cargar seguimientos:', error);
 
         contenedor.innerHTML = `
             <div class="historial-vacio">
+                No se pudo cargar el historial de seguimientos.
                 No se pudo cargar el historial de seguimientos.
             </div>
         `;
@@ -1614,11 +1795,20 @@ async function registrarSeguimiento() {
     const campo = document.getElementById(
         'observacion-seguimiento'
     );
+    const campo = document.getElementById(
+        'observacion-seguimiento'
+    );
 
     const boton = document.getElementById(
         'btn-seguimiento'
     );
+    const boton = document.getElementById(
+        'btn-seguimiento'
+    );
 
+    const mensaje = document.getElementById(
+        'mensaje-seguimiento'
+    );
     const mensaje = document.getElementById(
         'mensaje-seguimiento'
     );
@@ -1628,12 +1818,14 @@ async function registrarSeguimiento() {
     }
 
     const observacion = campo.value.trim();
+    const observacion = campo.value.trim();
 
     if (observacion === '') {
 
         mensaje.textContent =
             'Escribe una observación antes de continuar.';
 
+        mensaje.className = 'mensaje-seguimiento error';
         mensaje.className = 'mensaje-seguimiento error';
 
         campo.focus();
@@ -1644,12 +1836,16 @@ async function registrarSeguimiento() {
 
     boton.disabled = true;
     boton.textContent = 'Registrando...';
+    boton.textContent = 'Registrando...';
 
+    mensaje.textContent = '';
+    mensaje.className = 'mensaje-seguimiento';
     mensaje.textContent = '';
     mensaje.className = 'mensaje-seguimiento';
 
     try {
 
+        const datos = new FormData();
         const datos = new FormData();
 
         datos.append(
@@ -1680,7 +1876,16 @@ async function registrarSeguimiento() {
                 credentials: 'same-origin'
             }
         );
+        const respuesta = await fetch(
+            API_SEGUIMIENTO,
+            {
+                method: 'POST',
+                body: datos,
+                credentials: 'same-origin'
+            }
+        );
 
+        const resultado = await respuesta.json();
         const resultado = await respuesta.json();
 
         if (!resultado.success) {
@@ -1694,9 +1899,13 @@ async function registrarSeguimiento() {
             'Seguimiento registrado correctamente.';
 
         mensaje.className = 'mensaje-seguimiento exito';
+        mensaje.className = 'mensaje-seguimiento exito';
 
         campo.value = '';
 
+        const estado = document.getElementById(
+            'estado-alerta'
+        );
         const estado = document.getElementById(
             'estado-alerta'
         );
@@ -1705,14 +1914,20 @@ async function registrarSeguimiento() {
 
             estado.textContent =
                 resultado.estado_alerta || 'En seguimiento';
+                resultado.estado_alerta || 'En seguimiento';
 
+            estado.className = 'estado-alerta';
             estado.className = 'estado-alerta';
 
         }
 
         boton.disabled = false;
         boton.textContent = 'Registrar seguimiento';
+        boton.textContent = 'Registrar seguimiento';
 
+        const botonCerrar = document.getElementById(
+            'btn-cerrar-caso'
+        );
         const botonCerrar = document.getElementById(
             'btn-cerrar-caso'
         );
@@ -1735,8 +1950,10 @@ async function registrarSeguimiento() {
             'Ocurrió un error al registrar el seguimiento.';
 
         mensaje.className = 'mensaje-seguimiento error';
+        mensaje.className = 'mensaje-seguimiento error';
 
         boton.disabled = false;
+        boton.textContent = 'Registrar seguimiento';
         boton.textContent = 'Registrar seguimiento';
 
     }
@@ -1754,7 +1971,13 @@ async function cerrarCaso() {
     const boton = document.getElementById(
         'btn-cerrar-caso'
     );
+    const boton = document.getElementById(
+        'btn-cerrar-caso'
+    );
 
+    const mensaje = document.getElementById(
+        'mensaje-cierre'
+    );
     const mensaje = document.getElementById(
         'mensaje-cierre'
     );
@@ -1767,6 +1990,10 @@ async function cerrarCaso() {
         '¿Estás seguro de que deseas cerrar este caso?\n\n' +
         'Una vez cerrado, dejará de aparecer entre las alertas pendientes.'
     );
+    const confirmar = confirm(
+        '¿Estás seguro de que deseas cerrar este caso?\n\n' +
+        'Una vez cerrado, dejará de aparecer entre las alertas pendientes.'
+    );
 
     if (!confirmar) {
         return;
@@ -1774,12 +2001,16 @@ async function cerrarCaso() {
 
     boton.disabled = true;
     boton.textContent = 'Cerrando...';
+    boton.textContent = 'Cerrando...';
 
+    mensaje.textContent = '';
+    mensaje.className = 'mensaje-cierre';
     mensaje.textContent = '';
     mensaje.className = 'mensaje-cierre';
 
     try {
 
+        const datos = new FormData();
         const datos = new FormData();
 
         datos.append(
@@ -1809,7 +2040,16 @@ async function cerrarCaso() {
                 credentials: 'same-origin'
             }
         );
+        const respuesta = await fetch(
+            API_CERRAR_CASO,
+            {
+                method: 'POST',
+                body: datos,
+                credentials: 'same-origin'
+            }
+        );
 
+        const resultado = await respuesta.json();
         const resultado = await respuesta.json();
 
         if (!resultado.success) {
@@ -1820,9 +2060,14 @@ async function cerrarCaso() {
         }
 
         mensaje.textContent = 'Caso cerrado correctamente.';
+        mensaje.textContent = 'Caso cerrado correctamente.';
 
         mensaje.className = 'mensaje-cierre exito';
+        mensaje.className = 'mensaje-cierre exito';
 
+        const estado = document.getElementById(
+            'estado-alerta'
+        );
         const estado = document.getElementById(
             'estado-alerta'
         );
@@ -1830,7 +2075,9 @@ async function cerrarCaso() {
         if (estado) {
 
             estado.textContent = 'Cerrada';
+            estado.textContent = 'Cerrada';
 
+            estado.className = 'estado-alerta cerrada';
             estado.className = 'estado-alerta cerrada';
 
         }
@@ -1838,7 +2085,13 @@ async function cerrarCaso() {
         const campo = document.getElementById(
             'observacion-seguimiento'
         );
+        const campo = document.getElementById(
+            'observacion-seguimiento'
+        );
 
+        const botonSeguimiento = document.getElementById(
+            'btn-seguimiento'
+        );
         const botonSeguimiento = document.getElementById(
             'btn-seguimiento'
         );
@@ -1848,18 +2101,22 @@ async function cerrarCaso() {
             campo.disabled = true;
 
             campo.placeholder = 'El caso está cerrado.';
+            campo.placeholder = 'El caso está cerrado.';
 
         }
 
         if (botonSeguimiento) {
 
             botonSeguimiento.disabled = true;
+            botonSeguimiento.disabled = true;
 
+            botonSeguimiento.textContent = 'Caso cerrado';
             botonSeguimiento.textContent = 'Caso cerrado';
 
         }
 
         boton.disabled = true;
+        boton.textContent = 'Caso cerrado';
         boton.textContent = 'Caso cerrado';
 
         await cargarSeguimientos();
@@ -1867,14 +2124,17 @@ async function cerrarCaso() {
     } catch (error) {
 
         console.error('Error al cerrar caso:', error);
+        console.error('Error al cerrar caso:', error);
 
         mensaje.textContent =
             error.message ||
             'Ocurrió un error al cerrar el caso.';
 
         mensaje.className = 'mensaje-cierre error';
+        mensaje.className = 'mensaje-cierre error';
 
         boton.disabled = false;
+        boton.textContent = 'Cerrar caso';
         boton.textContent = 'Cerrar caso';
 
     }
